@@ -1,0 +1,90 @@
+# Copyright 2020 Patrick Riley <patriley@gmail.com>
+
+import gmpy2
+import scipy.misc
+
+# We keep module level global variables for the size of the
+# board. This allows each indivodual board to be smaller because it
+# doesn't even have to keep a reference to this at the cost of some
+# loss of flexibility. But really, we'll only muck the board size for
+# testing, so it's fine
+
+_num_markers = -1
+_num_spots = -1
+_num_valid_boards = -1
+# minimum (inclusive) valid board index
+_min_board_index = -1
+# maximum (exclusive) value board index
+_max_board_index = -1
+
+
+def initialize(num_markers, num_spots):
+    global _num_markers, _num_spots
+    global _num_valid_boards, _min_board_index, _max_board_index
+    _num_markers = num_markers
+    _num_spots = num_spots
+    # see Board for a discussion of number of boards and how the board
+    # indexing works
+    _num_valid_boards = scipy.misc.comb(_num_markers + _num_spots, _num_spots, exact=True)
+    _min_board_index = 0
+    _max_board_index = 1  # because max is exclusive
+    for i in range(num_markers):
+        _min_board_index |= 1 << i
+        _max_board_index |= 1 << (_num_markers + _num_spots - 1 - i)
+
+
+def num_valid_boards():
+    return _num_valid_boards
+
+
+def min_board_index():
+    return _min_board_index
+
+
+def max_board_index():
+    return _max_board_index
+
+
+class Board(object):
+    """Board represents a current state of the backgammon end game.
+
+    Let's talk about mapping board states to indexes.
+
+    If we have N markers and M spots to place them (excluding the off
+    the board state), then the problem of counting the number of board
+    states is the classic "Stars and Bars" problem in
+    combinatorics. The answer is computed by putting the states of the
+    board in correspondance with strings for "stars" (representing the
+    pieces) and "bars" representing separating one spot from another.
+
+    The number of valid board states is then C(N+M, M). (If you look
+    up the formula and worry I have an off by one error, remember
+    that M is the number of *not off the board* states
+
+    This counting comes from the number of distinct sequences of N+M
+    characters with M of them are "bars" (our separators). This also
+    suggests an encoding: bit strings up to N+M bits. We'll use 1 for
+    the "stars" and 0 for the "bars".
+
+    Note that a valid board state must have exactly N bits set to
+    1. This is the main reason we have to explcitly test whether an
+    index is valid. How efficient is this representation? For a normal
+    size backgammon game, N=15, M=6. 
+    # valid states = C(21, 6) = 54264
+    # bit strings of 21 bits = 2**21 = 2097152
+    Fraction of bot strings that are valid = 3%.
+
+    An advantage of this encoding is that evey valid move must move
+    the bars to the left (make the number lower). So if you want to
+    iterate over all board position and ensure that you have processed
+    every achievable next board position by the time you get to a
+    state, just iterate from min to max.
+    """
+
+    def is_valid_index(idx):
+        return (idx >= _min_board_index and
+                idx < _max_board_index and
+                gmpy2.popcount(idx) == _num_markers)
+    
+
+initialize(15, 6)
