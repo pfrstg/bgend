@@ -27,7 +27,7 @@ class BoardTestCase(unittest.TestCase):
                 count_valid += 1
         self.assertEqual(board.num_valid_boards(), count_valid)
         
-    def test_init(self):
+    def test_index_init(self):
         board.initialize(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
         # 11101101
@@ -45,7 +45,17 @@ class BoardTestCase(unittest.TestCase):
                 continue
             b = board.Board(idx)
             self.assertEqual(b.get_index(), idx)
-    
+
+    def test_pretty_print(self):
+        board.initialize(6, 2)
+        # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
+        # 11101101
+        b = board.Board(0xED)
+        self.assertEqual(b.pretty_string(),
+                         "0 1 o\n" + 
+                         "1 2 oo\n" + 
+                         "2 3 ooo\n")
+
         
 if __name__ == '__main__':
     unittest.main()

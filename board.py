@@ -117,5 +117,13 @@ class Board(object):
             bit_idx += 1
 
         return idx
-    
+
+    def pretty_string(self):
+        out = ""
+        for spot in range(_num_spots + 1):
+            out += "%d %d %s\n" % (spot, self.spot_counts[spot],
+                                   'o' * self.spot_counts[spot])
+        return out
+            
+            
 initialize(15, 6)
