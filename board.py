@@ -1,5 +1,6 @@
 # Copyright 2020 Patrick Riley <patriley@gmail.com>
 
+import array
 import gmpy2
 import scipy.misc
 
@@ -85,6 +86,36 @@ class Board(object):
         return (idx >= _min_board_index and
                 idx < _max_board_index and
                 gmpy2.popcount(idx) == _num_markers)
-    
 
+    def __init__(self, idx):
+        if not Board.is_valid_index(idx):
+            raise ValueError("%d is not a valid board index" % idx)
+        
+        self.spot_counts = array.array('i', [0] * (_num_spots + 1))
+        current_spot = 0
+        current_spot_count = 0
+        for i in range(_num_markers + _num_spots):
+            if idx & (1 << i):
+                # This is a marker
+                current_spot_count += 1
+            else:
+                # This is a divider
+                self.spot_counts[current_spot] = current_spot_count
+                current_spot += 1
+                current_spot_count = 0
+        self.spot_counts[current_spot] = current_spot_count
+
+    def get_index(self):
+        # This seems like an obviously fairly inefficient way to do this.
+        # batcing to set a bunch of bits all at once likely makes more sense
+        idx = 0
+        bit_idx = 0
+        for spot in range(_num_spots + 1):
+            for _ in range(self.spot_counts[spot]):
+                idx |= 1 << bit_idx
+                bit_idx += 1
+            bit_idx += 1
+
+        return idx
+    
 initialize(15, 6)

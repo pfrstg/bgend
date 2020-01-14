@@ -1,3 +1,4 @@
+import array
 import unittest
 from parameterized import parameterized
 
@@ -26,6 +27,25 @@ class BoardTestCase(unittest.TestCase):
                 count_valid += 1
         self.assertEqual(board.num_valid_boards(), count_valid)
         
+    def test_init(self):
+        board.initialize(6, 2)
+        # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
+        # 11101101
+        b = board.Board(0xED)
+        self.assertListEqual(list(b.spot_counts), [1, 2, 3])
+
+    @parameterized.expand([
+        (5, 3),
+        (10, 5),
+    ])
+    def test_index_round_trip(self, num_markers, num_spots):
+        board.initialize(num_markers, num_spots)
+        for idx in range(board.min_board_index(), board.max_board_index()):
+            if not board.Board.is_valid_index(idx):
+                continue
+            b = board.Board(idx)
+            self.assertEqual(b.get_index(), idx)
+    
         
 if __name__ == '__main__':
     unittest.main()
