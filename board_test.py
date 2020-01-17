@@ -56,6 +56,12 @@ class BoardTestCase(unittest.TestCase):
                          "1 2 oo\n" + 
                          "2 3 ooo\n")
 
+    def rolls_sum_to_one(self):
+        sum = 0
+        for _, prob in board.ROLLS:
+            sum += prob
+        self.assertEqual(sum, 1.0)
+        
         
 if __name__ == '__main__':
     unittest.main()

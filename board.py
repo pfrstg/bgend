@@ -1,6 +1,8 @@
 # Copyright 2020 Patrick Riley <patriley@gmail.com>
 
 import array
+import collections
+import itertools
 import gmpy2
 import scipy.misc
 
@@ -46,6 +48,21 @@ def max_board_index():
     return _max_board_index
 
 
+Move = collections.namedtuple('Move', ['spot', 'count'])
+
+Roll = collections.namedtuple('Roll', ['dice', 'prob'])
+
+def _generate_rolls():
+    out = []
+    for d1, d2 in itertools.combinations_with_replacement(range(1, 7), 2):
+        if (d1 == d2):
+            out.append(Roll([d1, d1, d1, d1], 1/36))
+        else:
+            out.append(Roll([d1, d2], 1/18))
+    return out
+
+ROLLS = _generate_rolls()
+            
 class Board(object):
     """Board represents a current state of the backgammon end game.
 
