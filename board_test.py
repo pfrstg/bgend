@@ -31,7 +31,7 @@ class BoardTestCase(unittest.TestCase):
         board.initialize(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
         # 11101101
-        b = board.Board(0xED)
+        b = board.Board.from_index(0xED)
         self.assertListEqual(list(b.spot_counts), [1, 2, 3])
 
     @parameterized.expand([
@@ -43,18 +43,18 @@ class BoardTestCase(unittest.TestCase):
         for idx in range(board.min_board_index(), board.max_board_index()):
             if not board.Board.is_valid_index(idx):
                 continue
-            b = board.Board(idx)
+            b = board.Board.from_index(idx)
             self.assertEqual(b.get_index(), idx)
 
     def test_pretty_print(self):
         board.initialize(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
         # 11101101
-        b = board.Board(0xED)
+        b = board.Board.from_index(0xED)
         self.assertEqual(b.pretty_string(),
-                         "0 1 o\n" + 
-                         "1 2 oo\n" + 
-                         "2 3 ooo\n")
+                         "0 1 o   \n" + 
+                         "1 2 oo  \n" + 
+                         "2 3 ooo \n")
 
     def rolls_sum_to_one(self):
         sum = 0

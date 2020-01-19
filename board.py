@@ -90,7 +90,7 @@ class Board(object):
     size backgammon game, N=15, M=6. 
     # valid states = C(21, 6) = 54264
     # bit strings of 21 bits = 2**21 = 2097152
-    Fraction of bot strings that are valid = 3%.
+    Fraction of bit strings that are valid = 3%.
 
     An advantage of this encoding is that evey valid move must move
     the bars to the left (make the number lower). So if you want to
@@ -104,11 +104,11 @@ class Board(object):
                 idx < _max_board_index and
                 gmpy2.popcount(idx) == _num_markers)
 
-    def __init__(self, idx):
+    def from_index(idx):
         if not Board.is_valid_index(idx):
             raise ValueError("%d is not a valid board index" % idx)
         
-        self.spot_counts = array.array('i', [0] * (_num_spots + 1))
+        spot_counts = array.array('i', [0] * (_num_spots + 1))
         current_spot = 0
         current_spot_count = 0
         for i in range(_num_markers + _num_spots):
@@ -117,14 +117,25 @@ class Board(object):
                 current_spot_count += 1
             else:
                 # This is a divider
-                self.spot_counts[current_spot] = current_spot_count
+                spot_counts[current_spot] = current_spot_count
                 current_spot += 1
                 current_spot_count = 0
-        self.spot_counts[current_spot] = current_spot_count
+        spot_counts[current_spot] = current_spot_count
 
+        return Board(spot_counts)
+
+    def __init__(self, spot_counts):
+        if len(spot_counts) != (_num_spots + 1):
+            raise ValueError("Bad size for %s, expected %d" %
+                             (spot_counts, _num_spots + 1))
+        if isinstance(spot_counts, array.array):
+            self.spot_counts = spot_counts
+        else:
+            self.spot_counts = array.array('i', spot_counts)
+        
     def get_index(self):
         # This seems like an obviously fairly inefficient way to do this.
-        # batcing to set a bunch of bits all at once likely makes more sense
+        # Batching to set a bunch of bits all at once likely makes more sense
         idx = 0
         bit_idx = 0
         for spot in range(_num_spots + 1):
@@ -135,12 +146,33 @@ class Board(object):
 
         return idx
 
-    def pretty_string(self):
-        out = ""
+    def pretty_string(self, moves=None):
+        out = []
+
+        # First, print the markers to a uniform length
+        line_format = "%%d %%d %%-%ds" % (max(self.spot_counts) + 1)
         for spot in range(_num_spots + 1):
-            out += "%d %d %s\n" % (spot, self.spot_counts[spot],
-                                   'o' * self.spot_counts[spot])
-        return out
+            out.append(line_format % (spot, self.spot_counts[spot],
+                                      'o' * self.spot_counts[spot]))
+
+        # Now, write the moves
+        if moves:
+            for move_idx, m in enumerate(moves):
+                move_end = max(m.spot - m.count, 0)
+                for spot_idx in range(_num_spots, -1, -1):
+                    if spot_idx > m.spot:
+                        this_move_str == '  ';
+                    elif spot_idx == m.spot:
+                        this_move_str = '%d ' % m.count
+                    elif spot_idx > move_end:
+                        this_move_str = '| '
+                    elif spot_idx == move_end:
+                        this_move_str = '+ '
+                    else:
+                        this_move_str = '  '
+                    out[spot_idx] += this_move_str
+            
+        return '\n'.join(out) + '\n'
             
             
 initialize(15, 6)
