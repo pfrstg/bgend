@@ -70,6 +70,21 @@ class BoardTestCase(unittest.TestCase):
                          "1 2 oo  \n" + 
                          "2 3 ooo \n")
 
+    def test_pretty_print_with_moves(self):
+        board.initialize(6, 4)
+        b = board.Board([2, 1, 1, 1, 1])
+
+        m1 = board.Move(spot=3, count=2)
+        m2 = board.Move(spot=3, count=3)
+        m3 = board.Move(spot=3, count=6)
+        m4 = board.Move(spot=4, count=1)
+        self.assertEqual(b.pretty_string([m1, m2, m3, m4]),
+                         "0 2 oo   x +   \n" +
+                         "1 1 o  x | |   \n" +
+                         "2 1 o  | | |   \n" +
+                         "3 1 o  2 3 6 x \n" +
+                         "4 1 o        1 \n")
+        
     def rolls_sum_to_one(self):
         sum = 0
         for _, prob in board.ROLLS:

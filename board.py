@@ -167,11 +167,13 @@ class Board(object):
                 move_end = max(m.spot - m.count, 0)
                 for spot_idx in range(_num_spots, -1, -1):
                     if spot_idx > m.spot:
-                        this_move_str == '  ';
+                        this_move_str = '  ';
                     elif spot_idx == m.spot:
                         this_move_str = '%d ' % m.count
                     elif spot_idx > move_end:
                         this_move_str = '| '
+                    elif spot_idx == m.spot - m.count:
+                        this_move_str = 'x '
                     elif spot_idx == move_end:
                         this_move_str = '+ '
                     else:
