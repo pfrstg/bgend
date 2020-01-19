@@ -34,6 +34,20 @@ class BoardTestCase(unittest.TestCase):
         b = board.Board.from_index(0xED)
         self.assertListEqual(list(b.spot_counts), [1, 2, 3])
 
+    def test_spot_counts_init(self):
+        board.initialize(6, 2)
+        b = board.Board([1, 2, 3])
+        self.assertListEqual(list(b.spot_counts), [1, 2, 3])
+
+    def test_spot_counts_init_errors(self):
+        board.initialize(6, 2)
+        with self.assertRaises(ValueError):
+            b = board.Board([5, 1])
+        with self.assertRaises(ValueError):
+            b = board.Board([3, 1, 1, 1])
+        with self.assertRaises(ValueError):
+            b = board.Board([1, 1, 1])
+
     @parameterized.expand([
         (5, 3),
         (10, 5),

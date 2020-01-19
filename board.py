@@ -4,6 +4,7 @@ import array
 import collections
 import itertools
 import gmpy2
+import numpy as np
 import scipy.misc
 
 # We keep module level global variables for the size of the
@@ -128,6 +129,11 @@ class Board(object):
         if len(spot_counts) != (_num_spots + 1):
             raise ValueError("Bad size for %s, expected %d" %
                              (spot_counts, _num_spots + 1))
+        if np.sum(spot_counts) != _num_markers:
+            raise ValueError("Total markers %d in %s not expected number %d" %
+                             (np.sum(spot_counts),
+                              str(spot_counts),
+                              _num_markers))
         if isinstance(spot_counts, array.array):
             self.spot_counts = spot_counts
         else:
