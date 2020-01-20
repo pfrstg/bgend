@@ -46,4 +46,9 @@ class MoveCountDistribution(object):
     def increase_counts(self, amount):
         return MoveCountDistribution(np.insert(self.dist, 0, [0] * amount))
 
+    def is_normalized(self):
+        return np.allclose(np.sum(self.dist), 1)
+
+    def expected_value(self):
+        return np.sum(self.dist * range(self.dist.shape[0]))
     
