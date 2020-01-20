@@ -195,16 +195,21 @@ class Board(object):
         Yields:
           list of Move objects. Each list will have the same size as roll.dice
         """
-        for move_list in self._generate_moves_recursive(roll, 0, []):
+        for move_list in self._generate_moves_recursive(roll, 0, 1, []):
             yield move_list
-        # TODO: Deal with the other order of dice application!
+        if roll.dice[0] != roll.dice[1]:
+            for move_list in self._generate_moves_recursive(
+                    roll, len(roll.dice) - 1, -1, []):
+                yield move_list
             
-    def _generate_moves_recursive(self, roll, roll_idx, moves):
-        try:
-            die = roll.dice[roll_idx]
-        except IndexError:
+    def _generate_moves_recursive(self, roll, roll_idx, roll_idx_step, moves):
+        # If you are thinking I shoudl be pythonic and ask for
+        # forgiveness not permission, you shoudl remember that -1 is a
+        # valid index, but I need to catch that here.
+        if roll_idx < 0 or roll_idx >= len(roll.dice):
             yield moves
             return
+        die = roll.dice[roll_idx]
         found_markers = False
         for spot_idx in range(_num_spots, 0, -1):
             if found_markers and spot_idx < die:
@@ -214,7 +219,7 @@ class Board(object):
                 move = Move(spot=spot_idx, count=die)
                 new_board = self.apply_move(move)
                 for move_list in new_board._generate_moves_recursive(
-                        roll, roll_idx + 1,
+                        roll, roll_idx + roll_idx_step, roll_idx_step,
                         moves + [move]):
                     yield move_list
         
