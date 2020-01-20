@@ -117,6 +117,77 @@ class BoardTestCase(unittest.TestCase):
         b = board.Board([1, 2, 3])
         with self.assertRaisesRegex(ValueError, "Overflow count"):
             b.apply_move(board.Move(1, 6))
+
+    def test_generate_moves_one_valid(self):
+        board.initialize(6, 2)
+        b = board.Board([1, 2, 3]) 
+        got = list(b.generate_moves(board.Roll(dice=[5, 4], prob=0)))
+        self.assertEqual(2, len(got))
+        self.assertIn([board.Move(2, 5), board.Move(2, 4)], got)
+        self.assertIn([board.Move(2, 4), board.Move(2, 5)], got)
+            
+    def test_generate_moves_second_dependent(self):
+        board.initialize(2, 4)
+        b = board.Board([0, 0, 1, 0, 1]) 
+        got = list(b.generate_moves(board.Roll(dice=[4, 4], prob=0)))
+        self.assertEqual(1, len(got))
+        self.assertIn([board.Move(4, 4), board.Move(2, 4)], got)
+
+    def test_generate_moves_valid_with_holes(self):
+        board.initialize(3, 4)
+        # Making sure we don't generate the move that is the 1 spot
+        # going 4 spaces.`
+        b = board.Board([0, 1, 0, 2, 0]) 
+        got = list(b.generate_moves(board.Roll(dice=[4, 4], prob=0)))
+        self.assertEqual(1, len(got))
+        self.assertIn([board.Move(3, 4), board.Move(3, 4)], got)
+
+    def test_generate_moves_opposite_order(self):
+        # This is the case where you have to try applying the dice in the
+        # opposite order in order to get a different board as outcome.
+        board.initialize(2, 4)
+        b = board.Board([0, 0, 1, 0, 1]) 
+        got = list(b.generate_moves(board.Roll(dice=[4, 3], prob=0)))
+        self.assertEqual(2, len(got))
+        self.assertIn([board.Move(4, 3), board.Move(2, 4)], got)
+        self.assertIn([board.Move(4, 4), board.Move(2, 3)], got)
+
+    def test_generate_moves_unfinished(self):
+        # This is where you don't have to use all the moves to finish
+        board.initialize(2, 2)
+        b = board.Board([1, 0, 1]) 
+        got = list(b.generate_moves(board.Roll(dice=[5, 4], prob=0)))
+        self.assertEqual(2, len(got))
+        self.assertIn([board.Move(2, 4)], got)
+        self.assertIn([board.Move(2, 5)], got)
+
+    def test_generate_moves_four_dice(self):
+        board.initialize(9, 4)
+        b = board.Board([0, 0, 3, 3, 3])
+        got = list(b.generate_moves(board.Roll(dice=[2, 2, 2, 2], prob=0)))
+        self.assertEqual(78, len(got))
+        # Since this generates an annoying large number of moves,
+        # we're not going to test all of them, just a couple.
+        self.assertIn([board.Move(3, 2), board.Move(2, 2),
+                       board.Move(2, 2), board.Move(2, 2)], got)
+        self.assertIn([board.Move(3, 2), board.Move(3, 2),
+                       board.Move(3, 2), board.Move(2, 2)], got)
+
+    @parameterized.expand([
+        (board.Roll(dice=(5, 4), prob=0),),
+    ])
+    def test_generate_moves_valid(self, roll):
+        # For a random board position, we'll just check that all
+        # generated moves are valid.
+        board.initialize(6, 4)
+        b = board.Board([0, 2, 3, 0, 1])
+        for moves in b.generate_moves(roll):
+            try:
+                b.apply_moves(moves)
+            except Exception as e:
+                print("%s with moves %s" % (roll, moves))
+                raise e
+        
         
 if __name__ == '__main__':
     unittest.main()

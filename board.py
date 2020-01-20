@@ -185,6 +185,12 @@ class Board(object):
             new_board.spot_counts[move.spot - move.count] += 1
         return new_board
 
+    def apply_moves(self, moves):
+        new_board = self
+        for m in moves:
+            new_board = self.apply_move(m)
+        return new_board
+
     def generate_moves(self, roll):
         """Generates all valid moves given roll.
 
