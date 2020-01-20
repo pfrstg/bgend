@@ -182,6 +182,42 @@ class Board(object):
             new_board.spot_counts[move.spot - move.count] += 1
         return new_board
 
+    def generate_moves(self, roll):
+        """Generates all valid moves given roll.
+
+        All valid moves will be returned and all moves will be valid.
+        However, multiple moves may be generated that return exactly
+        the same Board after all the moves in the list are applied.
+
+        Args:
+          roll: Roll to generate moves for
+
+        Yields:
+          list of Move objects. Each list will have the same size as roll.dice
+        """
+        for move_list in self._generate_moves_recursive(roll, 0, []):
+            yield move_list
+        # TODO: Deal with the other order of dice application!
+            
+    def _generate_moves_recursive(self, roll, roll_idx, moves):
+        try:
+            die = roll.dice[roll_idx]
+        except IndexError:
+            yield moves
+            return
+        found_markers = False
+        for spot_idx in range(_num_spots, 0, -1):
+            if found_markers and spot_idx < die:
+                break
+            if self.spot_counts[spot_idx] > 0:
+                found_markers = True
+                move = Move(spot=spot_idx, count=die)
+                new_board = self.apply_move(move)
+                for move_list in new_board._generate_moves_recursive(
+                        roll, roll_idx + 1,
+                        moves + [move]):
+                    yield move_list
+        
     def pretty_string(self, moves=None):
         out = []
 
