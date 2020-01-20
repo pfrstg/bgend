@@ -6,5 +6,10 @@ import numpy as np
 class MoveCountDistribution(object):
     """Stores a distribution over number of moves till end of game."""
 
-    def __init__(self):
-        self.dist = np.ones([1])
+    __slots__ = ["dist"]
+    
+    def __init__(self, dist=np.ones([1])):
+        self.dist = dist
+
+    def increase_counts(self, amount):
+        return MoveCountDistribution(np.insert(self.dist, 0, [0] * amount))
