@@ -10,10 +10,16 @@ class MoveCountDistributionTestCase(unittest.TestCase):
         d = strategy.MoveCountDistribution()
         np.testing.assert_allclose(d.dist, [1])
 
-    def test_operators(self):
+    def test_add_subtract(self):
+        d1 = strategy.MoveCountDistribution([0.75, 0.25])
+        d2 = strategy.MoveCountDistribution([0.7, 0.2, 0.1])
+        np.testing.assert_allclose((d1 + d2).dist, [1.45, 0.45, 0.1])
+        np.testing.assert_allclose((d2 + d1).dist, [1.45, 0.45, 0.1])
+        np.testing.assert_allclose((d1 - d2).dist, [0.05, 0.05, -0.1])
+        np.testing.assert_allclose((d2 - d1).dist, [-0.05, -0.05, 0.1])
+
+    def test_multiply_divide(self):
         d = strategy.MoveCountDistribution([0.75, 0.25])
-        np.testing.assert_allclose((d + 1).dist, [1.75, 1.25])
-        np.testing.assert_allclose((d - .05).dist, [.7, .2])
         np.testing.assert_allclose((d * 2).dist, [1.5, .5])
         np.testing.assert_allclose((d / 5).dist, [.15, .05])
         

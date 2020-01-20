@@ -14,15 +14,33 @@ class MoveCountDistribution(object):
             raise ValueError("Need 1D shape, got %s", self.dist.shape)
 
     def __add__(self, other):
-        return MoveCountDistribution(self.dist + other)
+        """Only support adding to another MoveCountDistribution."""
+        max_len = max(self.dist.shape[0], other.dist.shape[0])
+        return MoveCountDistribution(
+            np.pad(self.dist, (0, max_len - self.dist.shape[0]),
+                   mode="constant",
+                   constant_values=0) +
+            np.pad(other.dist, (0, max_len - other.dist.shape[0]),
+                   mode="constant",
+                   constant_values=0))                   
     
     def __sub__(self, other):
-        return MoveCountDistribution(self.dist - other)
+        """Only support subtracting to another MoveCountDistribution."""
+        max_len = max(self.dist.shape[0], other.dist.shape[0])
+        return MoveCountDistribution(
+            np.pad(self.dist, (0, max_len - self.dist.shape[0]),
+                   mode="constant",
+                   constant_values=0) -
+            np.pad(other.dist, (0, max_len - other.dist.shape[0]),
+                   mode="constant",
+                   constant_values=0))
     
     def __mul__(self, other):
+        """Only support multiplying with a scalar."""
         return MoveCountDistribution(self.dist * other)
     
     def __truediv__(self, other):
+        """Only support multiplying with a scalar."""
         return MoveCountDistribution(self.dist / other)
     
     def increase_counts(self, amount):
