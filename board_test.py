@@ -5,7 +5,7 @@ from parameterized import parameterized
 import board
 
 
-class BoardTestCase(unittest.TestCase):
+class ModuleTestCase(unittest.TestCase):
 
     def test_initialize_3marker_2spots(self):
         board.initialize(3, 2)
@@ -26,7 +26,16 @@ class BoardTestCase(unittest.TestCase):
             if board.Board.is_valid_index(idx):
                 count_valid += 1
         self.assertEqual(board.num_valid_boards(), count_valid)
+
+    def rolls_sum_to_one(self):
+        sum = 0
+        for _, prob in board.ROLLS:
+            sum += prob
+        self.assertEqual(sum, 1.0)
+
         
+class BoardTestCase(unittest.TestCase):
+
     def test_index_init(self):
         board.initialize(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
@@ -84,13 +93,30 @@ class BoardTestCase(unittest.TestCase):
                          "2 1 o  | | |   \n" +
                          "3 1 o  2 3 6 x \n" +
                          "4 1 o        1 \n")
+
+    def test_apply_move(self):
+        board.initialize(6, 2)
+        b = board.Board([1, 2, 3])
+
+        self.assertEqual(b.apply_move(board.Move(2, 6)),
+                         board.Board([2, 2, 2]))
+        self.assertEqual(b.apply_move(board.Move(2, 1)),
+                         board.Board([1, 3, 2]))
+        self.assertEqual(b.apply_move(board.Move(1, 1)),
+                         board.Board([2, 1, 3]))
+
+    def test_apply_move_errors(self):
+        board.initialize(6, 2)
         
-    def rolls_sum_to_one(self):
-        sum = 0
-        for _, prob in board.ROLLS:
-            sum += prob
-        self.assertEqual(sum, 1.0)
-        
+        b = board.Board([1, 2, 3])
+        with self.assertRaisesRegex(ValueError, "Invalid spot"):
+            b.apply_move(board.Move(0, 6))
+        b = board.Board([3, 0, 3])
+        with self.assertRaisesRegex(ValueError, "No marker"):
+            b.apply_move(board.Move(1, 1))
+        b = board.Board([1, 2, 3])
+        with self.assertRaisesRegex(ValueError, "Overflow count"):
+            b.apply_move(board.Move(1, 6))
         
 if __name__ == '__main__':
     unittest.main()

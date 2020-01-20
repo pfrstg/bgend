@@ -2,6 +2,7 @@
 
 import array
 import collections
+import copy
 import itertools
 import gmpy2
 import numpy as np
@@ -10,8 +11,8 @@ import scipy.misc
 # We keep module level global variables for the size of the
 # board. This allows each indivodual board to be smaller because it
 # doesn't even have to keep a reference to this at the cost of some
-# loss of flexibility. But really, we'll only muck the board size for
-# testing, so it's fine
+# loss of flexibility. But really, we'll only muck with the board size
+# for testing, so it's fine.
 
 _num_markers = -1
 _num_spots = -1
@@ -139,6 +140,13 @@ class Board(object):
         else:
             self.spot_counts = array.array('i', spot_counts)
         
+    def __str__(self):
+        return "Board(%s)" % list(self.spot_counts)
+    
+
+    def __eq__(self, other):
+        return self.spot_counts == other.spot_counts
+        
     def get_index(self):
         # This seems like an obviously fairly inefficient way to do this.
         # Batching to set a bunch of bits all at once likely makes more sense
@@ -151,6 +159,28 @@ class Board(object):
             bit_idx += 1
 
         return idx
+
+    def apply_move(self, move):
+        # Check for some error cases first.
+        if self.spot_counts[move.spot] < 1:
+            raise ValueError("No marker for %s on %s" % (
+                move, self))
+        if move.spot < 1 or move.spot > _num_spots:
+            raise ValueError("Invalid spot on %s on %s" % (
+                move, self))
+        new_board = copy.deepcopy(self)
+        new_board.spot_counts[move.spot] -= 1
+        if move.count > move.spot:
+            for i in range(move.spot + 1, _num_spots + 1):
+                if new_board.spot_counts[i] != 0:
+                    raise ValueError(
+                        ("Overflow count %s invalid " +
+                        "when spot %d still has markers on %s") % (
+                            move, i, self))
+            new_board.spot_counts[0] += 1
+        else:
+            new_board.spot_counts[move.spot - move.count] += 1
+        return new_board
 
     def pretty_string(self, moves=None):
         out = []
