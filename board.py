@@ -160,6 +160,9 @@ class Board(object):
 
         return idx
 
+    def is_finished(self):
+        return self.spot_counts[0] == _num_markers
+    
     def apply_move(self, move):
         # Check for some error cases first.
         if self.spot_counts[move.spot] < 1:
@@ -206,7 +209,7 @@ class Board(object):
         # If you are thinking I shoudl be pythonic and ask for
         # forgiveness not permission, you shoudl remember that -1 is a
         # valid index, but I need to catch that here.
-        if roll_idx < 0 or roll_idx >= len(roll.dice):
+        if roll_idx < 0 or roll_idx >= len(roll.dice) or self.is_finished():
             yield moves
             return
         die = roll.dice[roll_idx]
