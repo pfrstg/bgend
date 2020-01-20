@@ -188,7 +188,7 @@ class Board(object):
     def apply_moves(self, moves):
         new_board = self
         for m in moves:
-            new_board = self.apply_move(m)
+            new_board = new_board.apply_move(m)
         return new_board
 
     def generate_moves(self, roll):

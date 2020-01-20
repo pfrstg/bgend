@@ -175,6 +175,8 @@ class BoardTestCase(unittest.TestCase):
 
     @parameterized.expand([
         (board.Roll(dice=(5, 4), prob=0),),
+        (board.Roll(dice=(3, 3, 3, 3), prob=0),),
+        (board.Roll(dice=(3, 1), prob=0),),
     ])
     def test_generate_moves_valid(self, roll):
         # For a random board position, we'll just check that all
