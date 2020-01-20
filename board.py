@@ -64,7 +64,7 @@ def _generate_rolls():
     return out
 
 ROLLS = _generate_rolls()
-            
+
 class Board(object):
     """Board represents a current state of the backgammon end game.
 
@@ -89,7 +89,7 @@ class Board(object):
     Note that a valid board state must have exactly N bits set to
     1. This is the main reason we have to explcitly test whether an
     index is valid. How efficient is this representation? For a normal
-    size backgammon game, N=15, M=6. 
+    size backgammon game, N=15, M=6.
     # valid states = C(21, 6) = 54264
     # bit strings of 21 bits = 2**21 = 2097152
     Fraction of bit strings that are valid = 3%.
@@ -109,7 +109,7 @@ class Board(object):
     def from_index(idx):
         if not Board.is_valid_index(idx):
             raise ValueError("%d is not a valid board index" % idx)
-        
+
         spot_counts = array.array('i', [0] * (_num_spots + 1))
         current_spot = 0
         current_spot_count = 0
@@ -139,14 +139,14 @@ class Board(object):
             self.spot_counts = spot_counts
         else:
             self.spot_counts = array.array('i', spot_counts)
-        
+
     def __str__(self):
         return "Board(%s)" % list(self.spot_counts)
-    
+
 
     def __eq__(self, other):
         return self.spot_counts == other.spot_counts
-        
+
     def get_index(self):
         # This seems like an obviously fairly inefficient way to do this.
         # Batching to set a bunch of bits all at once likely makes more sense
@@ -162,6 +162,9 @@ class Board(object):
 
     def is_finished(self):
         return self.spot_counts[0] == _num_markers
+
+    def total_spots(self):
+        return np.sum(np.array(range(_num_spots + 1)) * self.spot_counts)
     
     def apply_move(self, move):
         # Check for some error cases first.
@@ -210,7 +213,7 @@ class Board(object):
             for move_list in self._generate_moves_recursive(
                     roll, len(roll.dice) - 1, -1, []):
                 yield move_list
-            
+
     def _generate_moves_recursive(self, roll, roll_idx, roll_idx_step, moves):
         # If you are thinking I shoudl be pythonic and ask for
         # forgiveness not permission, you shoudl remember that -1 is a
@@ -231,7 +234,7 @@ class Board(object):
                         roll, roll_idx + roll_idx_step, roll_idx_step,
                         moves + [move]):
                     yield move_list
-        
+
     def pretty_string(self, moves=None):
         out = []
 
@@ -259,8 +262,8 @@ class Board(object):
                     else:
                         this_move_str = '  '
                     out[spot_idx] += this_move_str
-            
+
         return '\n'.join(out) + '\n'
-            
-            
+
+
 initialize(15, 6)

@@ -57,6 +57,12 @@ class BoardTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             b = board.Board([1, 1, 1])
 
+    def test_total_spots(self):
+        board.initialize(6, 3)
+        self.assertEqual(0, board.Board([6, 0, 0, 0]).total_spots())
+        self.assertEqual(5, board.Board([1, 5, 0, 0]).total_spots())
+        self.assertEqual(14, board.Board([0, 1, 2, 3]).total_spots())
+        
     @parameterized.expand([
         (5, 3),
         (10, 5),
