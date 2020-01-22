@@ -8,46 +8,35 @@ import gmpy2
 import numpy as np
 import scipy.misc
 
-# We keep module level global variables for the size of the
-# board. This allows each indivodual board to be smaller because it
-# doesn't even have to keep a reference to this at the cost of some
-# loss of flexibility. But really, we'll only muck with the board size
-# for testing, so it's fine.
 
-_num_markers = -1
-_num_spots = -1
-_num_valid_boards = -1
-# minimum (inclusive) valid board index
-_min_board_index = -1
-# maximum (exclusive) value board index
-_max_board_index = -1
+class GameConfiguration(object):
+    """Keeps the overall config of the game and useful computed values.
 
+    Attributes:
+    * num_markers: NUmber of markers (playing pieces)
+    * num_spots: Number of spots, not including the "off the board" spot
+    * num_valid_boards: Total number of valid positions
+    * min_board_index: minimum (inclusive) valid board index
+    * max_board_index: maximum (exclusive) value board index
+    """
+    
+    def __init__(self, num_markers, num_spots):
+        self.num_markers = num_markers
+        self.num_spots = num_spots
+        # see Board for a discussion of number of boards and how the board
+        # indexing works
+        self.num_valid_boards = scipy.misc.comb(
+            self.num_markers + self.num_spots, self.num_spots, exact=True)
+        self.min_board_index = 0
+        self.max_board_index = 1  # because max is exclusive
+        for i in range(num_markers):
+            self.min_board_index |= 1 << i
+            self.max_board_index |= 1 << (self.num_markers + self.num_spots - 1 - i)
 
-def initialize(num_markers, num_spots):
-    global _num_markers, _num_spots
-    global _num_valid_boards, _min_board_index, _max_board_index
-    _num_markers = num_markers
-    _num_spots = num_spots
-    # see Board for a discussion of number of boards and how the board
-    # indexing works
-    _num_valid_boards = scipy.misc.comb(_num_markers + _num_spots, _num_spots, exact=True)
-    _min_board_index = 0
-    _max_board_index = 1  # because max is exclusive
-    for i in range(num_markers):
-        _min_board_index |= 1 << i
-        _max_board_index |= 1 << (_num_markers + _num_spots - 1 - i)
-
-
-def num_valid_boards():
-    return _num_valid_boards
-
-
-def min_board_index():
-    return _min_board_index
-
-
-def max_board_index():
-    return _max_board_index
+    def is_valid_index(self, idx):
+        return (idx >= self.min_board_index and
+                idx < self.max_board_index and
+                gmpy2.popcount(idx) == self.num_markers)
 
 
 Move = collections.namedtuple('Move', ['spot', 'count'])
@@ -64,6 +53,7 @@ def _generate_rolls():
     return out
 
 ROLLS = _generate_rolls()
+
 
 class Board(object):
     """Board represents a current state of the backgammon end game.
@@ -101,19 +91,14 @@ class Board(object):
     state, just iterate from min to max.
     """
 
-    def is_valid_index(idx):
-        return (idx >= _min_board_index and
-                idx < _max_board_index and
-                gmpy2.popcount(idx) == _num_markers)
-
-    def from_index(idx):
-        if not Board.is_valid_index(idx):
+    def from_index(config, idx):
+        if not config.is_valid_index(idx):
             raise ValueError("%d is not a valid board index" % idx)
 
-        spot_counts = array.array('i', [0] * (_num_spots + 1))
+        spot_counts = array.array('i', [0] * (config.num_spots + 1))
         current_spot = 0
         current_spot_count = 0
-        for i in range(_num_markers + _num_spots):
+        for i in range(config.num_markers + config.num_spots):
             if idx & (1 << i):
                 # This is a marker
                 current_spot_count += 1
@@ -124,17 +109,18 @@ class Board(object):
                 current_spot_count = 0
         spot_counts[current_spot] = current_spot_count
 
-        return Board(spot_counts)
+        return Board(config, spot_counts)
 
-    def __init__(self, spot_counts):
-        if len(spot_counts) != (_num_spots + 1):
+    def __init__(self, config, spot_counts):
+        self.config = config
+        if len(spot_counts) != (self.config.num_spots + 1):
             raise ValueError("Bad size for %s, expected %d" %
-                             (spot_counts, _num_spots + 1))
-        if np.sum(spot_counts) != _num_markers:
+                             (spot_counts, self.config.num_spots + 1))
+        if np.sum(spot_counts) != self.config.num_markers:
             raise ValueError("Total markers %d in %s not expected number %d" %
                              (np.sum(spot_counts),
                               str(spot_counts),
-                              _num_markers))
+                              self.config.num_markers))
         if isinstance(spot_counts, array.array):
             self.spot_counts = spot_counts
         else:
@@ -142,7 +128,6 @@ class Board(object):
 
     def __str__(self):
         return "Board(%s)" % list(self.spot_counts)
-
 
     def __eq__(self, other):
         return self.spot_counts == other.spot_counts
@@ -152,7 +137,7 @@ class Board(object):
         # Batching to set a bunch of bits all at once likely makes more sense
         idx = 0
         bit_idx = 0
-        for spot in range(_num_spots + 1):
+        for spot in range(self.config.num_spots + 1):
             for _ in range(self.spot_counts[spot]):
                 idx |= 1 << bit_idx
                 bit_idx += 1
@@ -161,23 +146,23 @@ class Board(object):
         return idx
 
     def is_finished(self):
-        return self.spot_counts[0] == _num_markers
+        return self.spot_counts[0] == self.config.num_markers
 
     def total_spots(self):
-        return np.sum(np.array(range(_num_spots + 1)) * self.spot_counts)
+        return np.sum(np.array(range(self.config.num_spots + 1)) * self.spot_counts)
     
     def apply_move(self, move):
         # Check for some error cases first.
         if self.spot_counts[move.spot] < 1:
             raise ValueError("No marker for %s on %s" % (
                 move, self))
-        if move.spot < 1 or move.spot > _num_spots:
+        if move.spot < 1 or move.spot > self.config.num_spots:
             raise ValueError("Invalid spot on %s on %s" % (
                 move, self))
         new_board = copy.deepcopy(self)
         new_board.spot_counts[move.spot] -= 1
         if move.count > move.spot:
-            for i in range(move.spot + 1, _num_spots + 1):
+            for i in range(move.spot + 1, self.config.num_spots + 1):
                 if new_board.spot_counts[i] != 0:
                     raise ValueError(
                         ("Overflow count %s invalid " +
@@ -223,7 +208,7 @@ class Board(object):
             return
         die = roll.dice[roll_idx]
         found_markers = False
-        for spot_idx in range(_num_spots, 0, -1):
+        for spot_idx in range(self.config.num_spots, 0, -1):
             if found_markers and spot_idx < die:
                 break
             if self.spot_counts[spot_idx] > 0:
@@ -240,7 +225,7 @@ class Board(object):
 
         # First, print the markers to a uniform length
         line_format = "%%d %%d %%-%ds" % (max(self.spot_counts) + 1)
-        for spot in range(_num_spots + 1):
+        for spot in range(self.config.num_spots + 1):
             out.append(line_format % (spot, self.spot_counts[spot],
                                       'o' * self.spot_counts[spot]))
 
@@ -248,7 +233,7 @@ class Board(object):
         if moves:
             for move_idx, m in enumerate(moves):
                 move_end = max(m.spot - m.count, 0)
-                for spot_idx in range(_num_spots, -1, -1):
+                for spot_idx in range(self.config.num_spots, -1, -1):
                     if spot_idx > m.spot:
                         this_move_str = '  ';
                     elif spot_idx == m.spot:
@@ -265,5 +250,3 @@ class Board(object):
 
         return '\n'.join(out) + '\n'
 
-
-initialize(15, 6)
