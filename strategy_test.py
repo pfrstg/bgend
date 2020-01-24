@@ -62,7 +62,7 @@ class DistributionStoreTestCase(unittest.TestCase):
             np.testing.assert_allclose(
                 store.distribution_map[b.get_index()].dist,
                 expected_move_count)
-            
+
         # This is an end to end test. We'll pull a few specific cases
         # that are relatively easy to understand.
 
@@ -78,6 +78,7 @@ class DistributionStoreTestCase(unittest.TestCase):
         # Only two pieces left but on 1st and 3rd spot. Any roll
         # except 1-2 and you go out in 1 roll
         test_move_count_distribution([4, 1, 0, 1], [0, 34/36, 2/36])
-        
+
+
 if __name__ == '__main__':
     unittest.main()
