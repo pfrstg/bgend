@@ -48,6 +48,9 @@ class MoveCountDistribution(object):
 
     def __str__(self):
         return "MCD(%f, %s)" % (self.expected_value(), self.dist)
+
+    def __iter__(self):
+        return self.dist.__iter__()
     
     def increase_counts(self, amount):
         return MoveCountDistribution(np.insert(self.dist, 0, [0] * amount))
@@ -66,7 +69,7 @@ class DistributionStore(object):
         self.config = config
         self.distribution_map = {}
         
-    def get_best_moves_for_roll(self, this_board, roll):
+    def compute_best_moves_for_roll(self, this_board, roll):
         """Computes the best moves for the roll.
 
         "best" means the resulting position with the lowest expected
@@ -101,7 +104,7 @@ class DistributionStore(object):
         
         return possible_next_boards[best_next_board][1]
 
-    def get_move_distribution_for_board(self, this_board):
+    def compute_move_distribution_for_board(self, this_board):
         """Computes the MoveCountDistribution for this_board.
 
         Assumes that all next board position are already computed in
@@ -115,7 +118,7 @@ class DistributionStore(object):
         """
         out = MoveCountDistribution()
         for roll in board.ROLLS:
-            moves = self.get_best_moves_for_roll(this_board, roll)
+            moves = self.compute_best_moves_for_roll(this_board, roll)
             next_board = this_board.apply_moves(moves)
             out += (self.distribution_map[next_board.get_index()]
                     .increase_counts(1) * roll.prob)
@@ -162,7 +165,7 @@ class DistributionStore(object):
                       flush=True)
 
             this_board = board.Board.from_index(self.config, board_idx)
-            dist = self.get_move_distribution_for_board(this_board)
+            dist = self.compute_move_distribution_for_board(this_board)
             self.distribution_map[board_idx] = dist
 
             if limit > 0 and boards_processed >= limit:
@@ -177,3 +180,4 @@ class DistributionStore(object):
             print("Board %d" % board_idx)
             print(dist)
             print(this_board.pretty_string())
+
