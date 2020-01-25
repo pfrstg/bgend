@@ -128,7 +128,7 @@ class DistributionStore(object):
             
         return out
 
-    def compute(self, progress_interval=5000, limit=-1):
+    def compute(self, progress_interval=500, limit=-1):
         """Computes and stores MoveCountDistribution for each board.
 
         clears an existing data in self.distribution_map
