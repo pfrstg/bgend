@@ -1,5 +1,6 @@
 # Copyright 2020 Patrick Riley <patriley@gmail.com>
 
+import h5py
 import numpy as np
 import time
 
@@ -181,3 +182,19 @@ class DistributionStore(object):
             print(dist)
             print(this_board.pretty_string())
 
+    def save_hdf5(self, fileobj):
+        with h5py.File(fileobj, "w") as f:
+            dist_map_grp = f.create_group("distribution_map")
+            for board_idx, mcd in self.distribution_map.items():
+                #print(mcd)
+                dist_map_grp.create_dataset(str(board_idx), data=mcd.dist)
+            self.config.save_into_hdf5(f.create_group("config"))
+
+    def load_hdf5(fileobj):
+        with h5py.File(fileobj, "w") as f:
+            store = DistributionStore(
+                board.GameConfiguration.load_from_hdf5(f["config"]))
+            for board_idx, arr in f["distribution_map"].items():
+                store.distribution_map[int(board_idx)] = (
+                    MoveCountDistribution(arr))
+        return store

@@ -1,4 +1,5 @@
 import numpy as np
+import tempfile
 import unittest
 
 import board
@@ -79,6 +80,29 @@ class DistributionStoreTestCase(unittest.TestCase):
         # except 1-2 and you go out in 1 roll
         test_move_count_distribution([4, 1, 0, 1], [0, 34/36, 2/36])
 
+    def test_round_trip_save_load(self):
+        config = board.GameConfiguration(3, 2)
+        store = strategy.DistributionStore(config)
+        store.compute()
+
+        with tempfile.TemporaryFile() as tmp:
+            store.save_hdf5(tmp)
+
+            tmp.seek(0)
+        
+            loaded_store = strategy.DistributionStore.load_hdf5(tmp)
+
+            self.assertEqual(store.config.num_markers,
+                             loaded_store.config.num_markers)
+            self.assertEqual(store.config.num_spots,
+                             loaded_store.config.num_spots)
+            self.assertEqual(len(store.distribution_map),
+                             len(loaded_store.distribution_map))
+            for board_idx, mcd in store.distribution_map.items():
+                np.testing.assert_allclose(
+                    mcd.dist,
+                    loaded_store.distribution_map[board_idx].dist)
+        
 
 if __name__ == '__main__':
     unittest.main()

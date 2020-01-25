@@ -38,6 +38,14 @@ class GameConfiguration(object):
                 idx < self.max_board_index and
                 gmpy2.popcount(idx) == self.num_markers)
 
+    def save_into_hdf5(self, hdf5_group):
+        hdf5_group.create_dataset("num_markers", data=[self.num_markers])
+        hdf5_group.create_dataset("num_spots", data=[self.num_spots])
+        
+    def load_from_hdf5(hdf5_group):
+        return GameConfiguration(hdf5_group["num_markers"][0],
+                                 hdf5_group["num_spots"][0])
+        
 
 Move = collections.namedtuple('Move', ['spot', 'count'])
 
