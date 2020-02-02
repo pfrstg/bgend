@@ -181,25 +181,20 @@ class Board(object):
     def next_valid_board(self):
         """Return a new board which has the next valid index."""
         out = copy.deepcopy(self)
-        if out.spot_counts[0] > 0:
-            # Move 1 from the 0 spot to the 1 spot
-            out.spot_counts[0] -= 1
-            out.spot_counts[1] += 1
+        # Find the first non empty spot. From that spot, move one
+        # to the next higher spot and the rest to spot 0.  Note
+        # that the range is *not* looking at the last spot. If
+        # only the last spot has markers, that's the max valid
+        # board.
+        for spot_idx in range(0, self.config.num_spots):
+            if out.spot_counts[spot_idx] == 0:
+                continue
+            spots = out.spot_counts[spot_idx]
+            out.spot_counts[spot_idx + 1] += 1
+            out.spot_counts[spot_idx] = 0
+            out.spot_counts[0] = spots - 1
             return out
-        else:
-            # Find the first non empty spot. From that spot, move one
-            # to the next higher spot and the rest to spot 0.  Note
-            # that the range is *not* looking at the last spot. If
-            # only the last spot has markers, that's the max valid
-            # board.
-            for spot_idx in range(1, self.config.num_spots):
-                if out.spot_counts[spot_idx] == 0:
-                    continue
-                out.spot_counts[spot_idx + 1] += 1
-                out.spot_counts[0] = out.spot_counts[spot_idx] - 1
-                out.spot_counts[spot_idx] = 0
-                return out
-            raise StopIteration()
+        raise StopIteration()
     
     def apply_move(self, move):
         # Check for some error cases first.
