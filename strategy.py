@@ -159,9 +159,10 @@ class DistributionStore(object):
         # The minimum board index is the game ended state.
         boards_processed = 1
         self.distribution_map[self.config.min_board_index] = MoveCountDistribution([1])
+        index_generator = self.config.generate_valid_indices()
+        next(index_generator)  # skip the solved state
         
-        for board_idx in range(self.config.min_board_index + 1,
-                               self.config.max_board_index):
+        for board_idx in index_generator:
             if not self.config.is_valid_index(board_idx):
                 continue
 
