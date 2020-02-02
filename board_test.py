@@ -41,6 +41,16 @@ class GameConfigurationTestCase(unittest.TestCase):
                 count_valid += 1
         self.assertEqual(config.num_valid_boards, count_valid)
 
+    @parameterized.expand([
+        (5, 3),
+        (10, 5),
+    ])
+    def test_generator(self, num_markers, num_spots):
+        config = board.GameConfiguration(num_markers, num_spots)
+        self.assertEqual(config.num_valid_boards,
+                         sum(1 for _ in config.generate_valid_indices()))
+        
+        
     def rolls_sum_to_one(self):
         sum = 0
         for _, prob in board.ROLLS:
@@ -71,11 +81,11 @@ class BoardTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             b = board.Board(config, [1, 1, 1])
 
-    def test_total_spots(self):
+    def test_total_pips(self):
         config = board.GameConfiguration(6, 3)
-        self.assertEqual(0, board.Board(config, [6, 0, 0, 0]).total_spots())
-        self.assertEqual(5, board.Board(config, [1, 5, 0, 0]).total_spots())
-        self.assertEqual(14, board.Board(config, [0, 1, 2, 3]).total_spots())
+        self.assertEqual(0, board.Board(config, [6, 0, 0, 0]).total_pips())
+        self.assertEqual(5, board.Board(config, [1, 5, 0, 0]).total_pips())
+        self.assertEqual(14, board.Board(config, [0, 1, 2, 3]).total_pips())
         
     @parameterized.expand([
         (5, 3),
@@ -89,6 +99,35 @@ class BoardTestCase(unittest.TestCase):
             b = board.Board.from_index(config, idx)
             self.assertEqual(b.get_index(), idx)
 
+    @parameterized.expand([
+        (5, 3),
+        (10, 5),
+    ])
+    def test_next_valid_board(self, num_markers, num_spots):
+        config = board.GameConfiguration(num_markers, num_spots)
+        b = board.Board.from_index(config, config.min_board_index)
+        index_gen = config.generate_valid_indices()
+        next(index_gen)
+        while True:
+            msg = "old b: %s; " % str(b)
+            try:
+                next_b = b.next_valid_board()
+                msg += "next b: %s; " % str(next_b)
+            except StopIteration:
+                try: 
+                    next_idx = next(index_gen)
+                    self.fail(
+                        "Generator not finished with next_valid_board was %s" % msg)
+                except StopIteration:
+                    break
+            try:
+                next_idx = next(index_gen)
+                msg += "next idx: %d; " % next_idx
+            except StopIteration:
+                self.fail("Generator ran out before board; %s" % msg)
+            self.assertEqual(next_b.get_index(), next_idx, msg)
+            b = next_b
+        
     def test_pretty_print(self):
         config = board.GameConfiguration(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot

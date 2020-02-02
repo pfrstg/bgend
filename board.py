@@ -50,6 +50,13 @@ class GameConfiguration(object):
                 idx < self.max_board_index and
                 gmpy2.popcount(idx) == self.num_markers)
 
+    def generate_valid_indices(self):
+        board_idx = self.min_board_index
+        while board_idx < self.max_board_index:
+            if self.is_valid_index(board_idx): 
+                yield board_idx
+            board_idx += 1
+                
     def save_into_hdf5(self, hdf5_group):
         hdf5_group.create_dataset("num_markers", data=[self.num_markers])
         hdf5_group.create_dataset("num_spots", data=[self.num_spots])
@@ -168,8 +175,31 @@ class Board(object):
     def is_finished(self):
         return self.spot_counts[0] == self.config.num_markers
 
-    def total_spots(self):
+    def total_pips(self):
         return np.sum(np.array(range(self.config.num_spots + 1)) * self.spot_counts)
+
+    def next_valid_board(self):
+        """Return a new board which has the next valid index."""
+        out = copy.deepcopy(self)
+        if out.spot_counts[0] > 0:
+            # Move 1 from the 0 spot to the 1 spot
+            out.spot_counts[0] -= 1
+            out.spot_counts[1] += 1
+            return out
+        else:
+            # Find the first non empty spot. From that spot, move one
+            # to the next higher spot and the rest to spot 0.  Note
+            # that the range is *not* looking at the last spot. If
+            # only the last spot has markers, that's the max valid
+            # board.
+            for spot_idx in range(1, self.config.num_spots):
+                if out.spot_counts[spot_idx] == 0:
+                    continue
+                out.spot_counts[spot_idx + 1] += 1
+                out.spot_counts[0] = out.spot_counts[spot_idx] - 1
+                out.spot_counts[spot_idx] = 0
+                return out
+            raise StopIteration()
     
     def apply_move(self, move):
         # Check for some error cases first.
