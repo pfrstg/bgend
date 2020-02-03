@@ -50,6 +50,32 @@ class GameConfigurationTestCase(unittest.TestCase):
         self.assertEqual(config.num_valid_boards,
                          sum(1 for _ in config.generate_valid_indices()))
         
+
+    @parameterized.expand([
+        (5, 3),
+        (10, 5),
+    ])
+    def test_next_valid_index(self, num_markers, num_spots):
+        config = board.GameConfiguration(num_markers, num_spots)
+        board_idx = config.min_board_index
+        while True:
+            try:
+                next_board_idx = config.next_valid_index(board_idx)
+            except StopIteration:
+                next_board_idx = -1
+            expected_board_idx = board_idx + 1
+            while not(config.is_valid_index(expected_board_idx)):
+                expected_board_idx += 1
+                if expected_board_idx >= config.max_board_index:
+                    expected_board_idx = -1
+                    break
+            self.assertEqual(next_board_idx, expected_board_idx,
+                             "previous board idx: %d" % board_idx)
+
+            if next_board_idx == -1:
+                break
+
+            board_idx = next_board_idx
         
     def rolls_sum_to_one(self):
         sum = 0

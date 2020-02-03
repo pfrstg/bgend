@@ -31,7 +31,7 @@ class GameConfiguration(object):
     * min_board_index: minimum (inclusive) valid board index
     * max_board_index: maximum (exclusive) value board index
     """
-    
+
     def __init__(self, num_markers, num_spots):
         self.num_markers = num_markers
         self.num_spots = num_spots
@@ -50,21 +50,57 @@ class GameConfiguration(object):
                 idx < self.max_board_index and
                 gmpy2.popcount(idx) == self.num_markers)
 
+    def next_valid_index(self, board_idx):
+        """Generates the next valid board idx after idx.
+
+        Follows the same algorithm as board.next_valid_board, but done with
+        bit manipulations.
+        """
+        if board_idx >= self.max_board_index - 1:
+            raise StopIteration
+
+        # Find the bit position of the first 1 and the bit postion of the
+        # last 1 in that group of 1s.
+        first_one_pos = -1
+        one_block_end_pos = -1
+        for i in range(0, self.num_markers + self.num_spots):
+            if (1 << i) & board_idx:
+                if first_one_pos < 0:
+                    first_one_pos = i
+            elif first_one_pos >= 0:
+                one_block_end_pos = i - 1
+                break
+
+        assert(first_one_pos >= 0)
+        assert(one_block_end_pos >= 0)
+
+        # lower mask is everything excpect the last 1 in lowest block of 1s
+        # upper mask is everything else
+        upper_mask = ~0 << one_block_end_pos
+        lower_mask = ~upper_mask
+
+        # the xor swaps a 01 at the end of the group; this puts one 1
+        # in the next higher bucket
+        upper = (board_idx & upper_mask) ^ (3 << one_block_end_pos)
+        lower = (board_idx & lower_mask) >> first_one_pos
+
+        return upper | lower
+
     def generate_valid_indices(self):
         board_idx = self.min_board_index
         while board_idx < self.max_board_index:
-            if self.is_valid_index(board_idx): 
+            if self.is_valid_index(board_idx):
                 yield board_idx
             board_idx += 1
-                
+
     def save_into_hdf5(self, hdf5_group):
         hdf5_group.create_dataset("num_markers", data=[self.num_markers])
         hdf5_group.create_dataset("num_spots", data=[self.num_spots])
-        
+
     def load_from_hdf5(hdf5_group):
         return GameConfiguration(hdf5_group["num_markers"][0],
                                  hdf5_group["num_spots"][0])
-        
+
 
 Move = collections.namedtuple('Move', ['spot', 'count'])
 
@@ -195,7 +231,7 @@ class Board(object):
             out.spot_counts[0] = spots - 1
             return out
         raise StopIteration()
-    
+
     def apply_move(self, move):
         # Check for some error cases first.
         if self.spot_counts[move.spot] < 1:
@@ -294,4 +330,3 @@ class Board(object):
                     out[spot_idx] += this_move_str
 
         return '\n'.join(out) + '\n'
-
