@@ -109,10 +109,7 @@ Wastage = EPC - pips
         
         expected_mcd = strategy.MoveCountDistribution(
             [0.0, .13889, .86111])
-        self.assertTrue(np.all(np.isclose(mcd.dist,
-                                          expected_mcd.dist,
-                                          atol=1e-5)),
-                        msg='expected={}, got={}'.format(expected_mcd, mcd))
+        np.testing.assert_allclose(expected_mcd.dist, mcd.dist, atol=1e-5)
         
 
 if __name__ == '__main__':

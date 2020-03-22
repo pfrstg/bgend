@@ -64,20 +64,37 @@ def parse_gnubg_dump(config, gnubg_str):
       board.Board, strategy.MoveCountDistribution
     """
     pos_id_str = None
-    mcd = strategy.MoveCountDistribution()
+    mcd = None
     parsing_mcd = False
 
     pos_id_re = re.compile(r'GNU Backgammon  Position ID: ([A-Za-z0-0+/]*)')
-
+    start_mcd_re = re.compile(r'^Rolls\s+Player\s+Opponent')
+    mcd_line_re = re.compile(
+        r'^\s*\d+\s+[\d\.]+\s+([\d\.]+)')
+    
     for line in gnubg_str.splitlines():
-        pos_id_match = pos_id_re.search(line)
-        print(line)
-        print(pos_id_match)
-        if pos_id_match:
-            pos_id_str = pos_id_match.group(1)
+        if parsing_mcd:
+            match = mcd_line_re.search(line)
+            if match:
+                value = float(match.group(1)) / 100.0
+                if not mcd:
+                    mcd = strategy.MoveCountDistribution([value])
+                else:
+                    mcd = mcd.append([value])
+            else:
+                parsing_mcd = False
+
+        elif start_mcd_re.search(line):
+            parsing_mcd = True
+
+        else:
+            match = pos_id_re.search(line)
+            if match:
+                pos_id_str = match.group(1)
 
     if not pos_id_str:
-        raise ValueError('Never found position id line!')
-        
-    return (position_id_string_to_board(config, pos_id_str),
-            strategy.MoveCountDistribution([1]))
+        raise ValueError('Never found position id line')
+    if not mcd:
+        raise ValueError('Never found move distribution')
+    
+    return position_id_string_to_board(config, pos_id_str), mcd
