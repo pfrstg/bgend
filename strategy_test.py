@@ -65,8 +65,8 @@ class MoveCountDistributionTestCase(unittest.TestCase):
 
     def test_append(self):
         d = strategy.MoveCountDistribution([0.1, 0.2])
-        np.testing.assert_allclose(d.append(0.3).dist,
-                                   [0.1, 0.2, 0.3])
+        np.testing.assert_allclose(d.append([0.3, 0.4]).dist,
+                                   [0.1, 0.2, 0.3, 0.4])
         
 
 class DistributionStoreTestCase(unittest.TestCase):
