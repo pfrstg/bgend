@@ -20,7 +20,10 @@ import board
 
 
 class MoveCountDistribution(object):
-    """Stores a distribution over number of moves till end of game."""
+    """Stores a distribution over number of moves till end of game.
+
+    Attribute dist is an np array of float containing the probabilities of 
+    each number of moves to finish."""
 
     __slots__ = ["dist"]
     

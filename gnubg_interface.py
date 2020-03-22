@@ -18,8 +18,11 @@
 import array
 import base64
 import gmpy2
+import re
 
 import board
+import strategy
+
 
 def position_id_string_to_board(config, pos_id_str):
     """Convert a Base64 endcoded position ID from gnubg to a Board.
@@ -35,8 +38,6 @@ def position_id_string_to_board(config, pos_id_str):
     Returns:
       board.Board
     """
-    spot_counts = array.array('b', [0] * (config.num_spots + 1))
-
     pos_id = int.from_bytes(base64.b64decode(pos_id_str + '=='),
                             byteorder='little')
 
@@ -47,6 +48,36 @@ def position_id_string_to_board(config, pos_id_str):
     modified_pos_id = ( (pos_id << (missing_markers + 1)) |
                         ~(~0 << missing_markers) )
 
-    print(bin(pos_id))
-    print(bin(modified_pos_id))
     return board.Board.from_index(config, modified_pos_id)
+
+
+def parse_gnubg_dump(config, gnubg_str):
+    """Parse the output of gnubg's "bearoffdump".
+    
+    This parses the "Opponent" move distribution from thet "Bearing off" column
+
+    Args:
+      config: board.GameConfiguration
+      gnubg_str: string to parse
+
+    Returns
+      board.Board, strategy.MoveCountDistribution
+    """
+    pos_id_str = None
+    mcd = strategy.MoveCountDistribution()
+    parsing_mcd = False
+
+    pos_id_re = re.compile(r'GNU Backgammon  Position ID: ([A-Za-z0-0+/]*)')
+
+    for line in gnubg_str.splitlines():
+        pos_id_match = pos_id_re.search(line)
+        print(line)
+        print(pos_id_match)
+        if pos_id_match:
+            pos_id_str = pos_id_match.group(1)
+
+    if not pos_id_str:
+        raise ValueError('Never found position id line!')
+        
+    return (position_id_string_to_board(config, pos_id_str),
+            strategy.MoveCountDistribution([1]))
