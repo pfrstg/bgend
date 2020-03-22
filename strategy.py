@@ -76,6 +76,9 @@ class MoveCountDistribution(object):
 
     def expected_value(self):
         return np.sum(self.dist * range(self.dist.shape[0]))
+
+    def append(self, value):
+        return MoveCountDistribution(np.append(self.dist, [value]))
     
 
 class DistributionStore(object):
