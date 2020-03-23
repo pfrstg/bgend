@@ -82,7 +82,12 @@ class MoveCountDistribution(object):
     
 
 class DistributionStore(object):
-    """Stores MoveCountDistributions for board states."""
+    """Stores MoveCountDistributions for board states.
+
+    Attributes:
+      config: board.GameConfiguration
+      distribution_map: map from board index to MoveCountDistribution
+    """
 
     def __init__(self, config):
         self.config = config
