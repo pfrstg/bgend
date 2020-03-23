@@ -124,8 +124,12 @@ def create_distribution_store_from_gnubg(gnubg_dir):
 
     start_time = time.time()
 
-    # gnubg uses a 1 based index as an argument to bearoffdump
-    for idx in range(1, config.num_valid_boards + 1):
+    # gnubg uses a 1 based index as an argument to
+    # bearoffdump. However, it doesn't have the end state as a valid
+    # index so we add that manually.
+    store.distribution_map[config.min_board_index] = (
+        strategy.MoveCountDistribution([1]))
+    for idx in range(1, config.num_valid_boards):
         completed_process = subprocess.run(
             [os.path.join(gnubg_dir, 'bearoffdump'),
              os.path.join(gnubg_dir, 'gnubg_os0.bd'),
