@@ -50,7 +50,7 @@ def position_id_string_to_board(config, pos_id_str):
     modified_pos_id = ( (pos_id << (missing_markers + 1)) |
                         ~(~0 << missing_markers) )
 
-    return board.Board.from_index(config, modified_pos_id)
+    return board.Board.from_id(config, modified_pos_id)
 
 
 def parse_gnubg_dump(config, gnubg_str):
@@ -127,7 +127,7 @@ def create_distribution_store_from_gnubg(gnubg_dir):
     # gnubg uses a 1 based index as an argument to
     # bearoffdump. However, it doesn't have the end state as a valid
     # index so we add that manually.
-    store.distribution_map[config.min_board_index] = (
+    store.distribution_map[config.min_board_id] = (
         strategy.MoveCountDistribution([1]))
     for idx in range(1, config.num_valid_boards):
         completed_process = subprocess.run(
@@ -143,7 +143,7 @@ def create_distribution_store_from_gnubg(gnubg_dir):
             b, mcd = parse_gnubg_dump(config, completed_process.stdout)
         except ValueError as err:
             raise ValueError('For gnubg index {}: {}'.format(idx, err))
-        store.distribution_map[b.get_index()] = mcd
+        store.distribution_map[b.get_id()] = mcd
 
         if idx % progress_interval == 0:
             frac_complete = idx / config.num_valid_boards

@@ -80,7 +80,7 @@ class DistributionStoreTestCase(unittest.TestCase):
             print("board_init: %s" % board_init)
             b = board.Board(config, board_init)
             np.testing.assert_allclose(
-                store.distribution_map[b.get_index()].dist,
+                store.distribution_map[b.get_id()].dist,
                 expected_move_count)
 
         # This is an end to end test. We'll pull a few specific cases
@@ -117,10 +117,10 @@ class DistributionStoreTestCase(unittest.TestCase):
                              loaded_store.config.num_spots)
             self.assertEqual(len(store.distribution_map),
                              len(loaded_store.distribution_map))
-            for board_idx, mcd in store.distribution_map.items():
+            for board_id, mcd in store.distribution_map.items():
                 np.testing.assert_allclose(
                     mcd.dist,
-                    loaded_store.distribution_map[board_idx].dist)
+                    loaded_store.distribution_map[board_id].dist)
         
 
 if __name__ == '__main__':

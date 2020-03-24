@@ -28,8 +28,8 @@ class GameConfiguration(object):
     * num_markers: NUmber of markers (playing pieces)
     * num_spots: Number of spots, not including the "off the board" spot
     * num_valid_boards: Total number of valid positions
-    * min_board_index: minimum (inclusive) valid board index
-    * max_board_index: maximum (exclusive) value board index
+    * min_board_id: minimum (inclusive) valid board id
+    * max_board_id: maximum (exclusive) value board id
     """
 
     def __init__(self, num_markers, num_spots):
@@ -39,24 +39,24 @@ class GameConfiguration(object):
         # indexing works
         self.num_valid_boards = scipy.misc.comb(
             self.num_markers + self.num_spots, self.num_spots, exact=True)
-        self.min_board_index = 0
-        self.max_board_index = 1  # because max is exclusive
+        self.min_board_id = 0
+        self.max_board_id = 1  # because max is exclusive
         for i in range(num_markers):
-            self.min_board_index |= 1 << i
-            self.max_board_index |= 1 << (self.num_markers + self.num_spots - 1 - i)
+            self.min_board_id |= 1 << i
+            self.max_board_id |= 1 << (self.num_markers + self.num_spots - 1 - i)
 
-    def is_valid_index(self, idx):
-        return (idx >= self.min_board_index and
-                idx < self.max_board_index and
+    def is_valid_id(self, idx):
+        return (idx >= self.min_board_id and
+                idx < self.max_board_id and
                 gmpy2.popcount(idx) == self.num_markers)
 
-    def next_valid_index(self, board_idx):
+    def next_valid_id(self, board_id):
         """Generates the next valid board idx after idx.
 
         Follows the same algorithm as board.next_valid_board, but done with
         bit manipulations.
         """
-        if board_idx >= self.max_board_index - 1:
+        if board_id >= self.max_board_id - 1:
             raise StopIteration
 
         # Find the bit position of the first 1 and the bit postion of the
@@ -64,7 +64,7 @@ class GameConfiguration(object):
         first_one_pos = -1
         one_block_end_pos = -1
         for i in range(0, self.num_markers + self.num_spots):
-            if (1 << i) & board_idx:
+            if (1 << i) & board_id:
                 if first_one_pos < 0:
                     first_one_pos = i
             elif first_one_pos >= 0:
@@ -81,17 +81,17 @@ class GameConfiguration(object):
 
         # the xor swaps a 01 at the end of the group; this puts one 1
         # in the next higher bucket
-        upper = (board_idx & upper_mask) ^ (3 << one_block_end_pos)
-        lower = (board_idx & lower_mask) >> first_one_pos
+        upper = (board_id & upper_mask) ^ (3 << one_block_end_pos)
+        lower = (board_id & lower_mask) >> first_one_pos
 
         return upper | lower
 
-    def generate_valid_indices(self):
-        board_idx = self.min_board_index
-        while board_idx < self.max_board_index:
-            if self.is_valid_index(board_idx):
-                yield board_idx
-            board_idx += 1
+    def generate_valid_ids(self):
+        board_id = self.min_board_id
+        while board_id < self.max_board_id:
+            if self.is_valid_id(board_id):
+                yield board_id
+            board_id += 1
 
     def save_into_hdf5(self, hdf5_group):
         hdf5_group.create_dataset("num_markers", data=[self.num_markers])
@@ -121,7 +121,7 @@ ROLLS = _generate_rolls()
 class Board(object):
     """Board represents a current state of the backgammon end game.
 
-    Let's talk about mapping board states to indexes.
+    Let's talk about mapping board states to ids.
 
     If we have N markers and M spots to place them (excluding the off
     the board state), then the problem of counting the number of board
@@ -141,7 +141,7 @@ class Board(object):
 
     Note that a valid board state must have exactly N bits set to
     1. This is the main reason we have to explcitly test whether an
-    index is valid. How efficient is this representation? For a normal
+    id is valid. How efficient is this representation? For a normal
     size backgammon game, N=15, M=6.
     # valid states = C(21, 6) = 54264
     # bit strings of 21 bits = 2**21 = 2097152
@@ -154,9 +154,9 @@ class Board(object):
     state, just iterate from min to max.
     """
 
-    def from_index(config, idx):
-        if not config.is_valid_index(idx):
-            raise ValueError("%d is not a valid board index" % idx)
+    def from_id(config, idx):
+        if not config.is_valid_id(idx):
+            raise ValueError("%d is not a valid board id" % idx)
 
         spot_counts = array.array('i', [0] * (config.num_spots + 1))
         current_spot = 0
@@ -195,7 +195,7 @@ class Board(object):
     def __eq__(self, other):
         return self.spot_counts == other.spot_counts
 
-    def get_index(self):
+    def get_id(self):
         # This seems like an obviously fairly inefficient way to do this.
         # Batching to set a bunch of bits all at once likely makes more sense
         idx = 0
@@ -215,7 +215,7 @@ class Board(object):
         return np.sum(np.array(range(self.config.num_spots + 1)) * self.spot_counts)
 
     def next_valid_board(self):
-        """Return a new board which has the next valid index."""
+        """Return a new board which has the next valid id."""
         out = copy.deepcopy(self)
         # Find the first non empty spot. From that spot, move one
         # to the next higher spot and the rest to spot 0.  Note

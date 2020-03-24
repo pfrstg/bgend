@@ -25,9 +25,9 @@ class GameConfigurationTestCase(unittest.TestCase):
         config = board.GameConfiguration(3, 2)
         self.assertEqual(config.num_valid_boards, 10)
         # 5 total bits 00111 is the min
-        self.assertEqual(config.min_board_index, 7)
+        self.assertEqual(config.min_board_id, 7)
         # 5 total bits 11100 is the max, adding 1 for exclusive
-        self.assertEqual(config.max_board_index, 28 + 1)
+        self.assertEqual(config.max_board_id, 28 + 1)
 
     @parameterized.expand([
         (5, 3),
@@ -36,8 +36,8 @@ class GameConfigurationTestCase(unittest.TestCase):
     def test_is_valid_counts(self, num_markers, num_spots):
         config = board.GameConfiguration(num_markers, num_spots)
         count_valid = 0
-        for idx in range(config.min_board_index, config.max_board_index):
-            if config.is_valid_index(idx):
+        for idx in range(config.min_board_id, config.max_board_id):
+            if config.is_valid_id(idx):
                 count_valid += 1
         self.assertEqual(config.num_valid_boards, count_valid)
 
@@ -48,34 +48,34 @@ class GameConfigurationTestCase(unittest.TestCase):
     def test_generator(self, num_markers, num_spots):
         config = board.GameConfiguration(num_markers, num_spots)
         self.assertEqual(config.num_valid_boards,
-                         sum(1 for _ in config.generate_valid_indices()))
+                         sum(1 for _ in config.generate_valid_ids()))
         
 
     @parameterized.expand([
         (5, 3),
         (10, 5),
     ])
-    def test_next_valid_index(self, num_markers, num_spots):
+    def test_next_valid_id(self, num_markers, num_spots):
         config = board.GameConfiguration(num_markers, num_spots)
-        board_idx = config.min_board_index
+        board_id = config.min_board_id
         while True:
             try:
-                next_board_idx = config.next_valid_index(board_idx)
+                next_board_id = config.next_valid_id(board_id)
             except StopIteration:
-                next_board_idx = -1
-            expected_board_idx = board_idx + 1
-            while not(config.is_valid_index(expected_board_idx)):
-                expected_board_idx += 1
-                if expected_board_idx >= config.max_board_index:
-                    expected_board_idx = -1
+                next_board_id = -1
+            expected_board_id = board_id + 1
+            while not(config.is_valid_id(expected_board_id)):
+                expected_board_id += 1
+                if expected_board_id >= config.max_board_id:
+                    expected_board_id = -1
                     break
-            self.assertEqual(next_board_idx, expected_board_idx,
-                             "previous board idx: %d" % board_idx)
+            self.assertEqual(next_board_id, expected_board_id,
+                             "previous board idx: %d" % board_id)
 
-            if next_board_idx == -1:
+            if next_board_id == -1:
                 break
 
-            board_idx = next_board_idx
+            board_id = next_board_id
         
     def rolls_sum_to_one(self):
         sum = 0
@@ -86,11 +86,11 @@ class GameConfigurationTestCase(unittest.TestCase):
         
 class BoardTestCase(unittest.TestCase):
 
-    def test_index_init(self):
+    def test_id_init(self):
         config = board.GameConfiguration(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
         # 11101101
-        b = board.Board.from_index(config, 0xED)
+        b = board.Board.from_id(config, 0xED)
         self.assertListEqual(list(b.spot_counts), [1, 2, 3])
 
     def test_spot_counts_init(self):
@@ -117,13 +117,13 @@ class BoardTestCase(unittest.TestCase):
         (5, 3),
         (10, 5),
     ])
-    def test_index_round_trip(self, num_markers, num_spots):
+    def test_id_round_trip(self, num_markers, num_spots):
         config = board.GameConfiguration(num_markers, num_spots)
-        for idx in range(config.min_board_index, config.max_board_index):
-            if not config.is_valid_index(idx):
+        for idx in range(config.min_board_id, config.max_board_id):
+            if not config.is_valid_id(idx):
                 continue
-            b = board.Board.from_index(config, idx)
-            self.assertEqual(b.get_index(), idx)
+            b = board.Board.from_id(config, idx)
+            self.assertEqual(b.get_id(), idx)
 
     @parameterized.expand([
         (5, 3),
@@ -131,9 +131,9 @@ class BoardTestCase(unittest.TestCase):
     ])
     def test_next_valid_board(self, num_markers, num_spots):
         config = board.GameConfiguration(num_markers, num_spots)
-        b = board.Board.from_index(config, config.min_board_index)
-        index_gen = config.generate_valid_indices()
-        next(index_gen)
+        b = board.Board.from_id(config, config.min_board_id)
+        id_gen = config.generate_valid_ids()
+        next(id_gen)
         while True:
             msg = "old b: %s; " % str(b)
             try:
@@ -141,24 +141,24 @@ class BoardTestCase(unittest.TestCase):
                 msg += "next b: %s; " % str(next_b)
             except StopIteration:
                 try: 
-                    next_idx = next(index_gen)
+                    next_idx = next(id_gen)
                     self.fail(
                         "Generator not finished with next_valid_board was %s" % msg)
                 except StopIteration:
                     break
             try:
-                next_idx = next(index_gen)
+                next_idx = next(id_gen)
                 msg += "next idx: %d; " % next_idx
             except StopIteration:
                 self.fail("Generator ran out before board; %s" % msg)
-            self.assertEqual(next_b.get_index(), next_idx, msg)
+            self.assertEqual(next_b.get_id(), next_idx, msg)
             b = next_b
         
     def test_pretty_print(self):
         config = board.GameConfiguration(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
         # 11101101
-        b = board.Board.from_index(config, 0xED)
+        b = board.Board.from_id(config, 0xED)
         self.assertEqual(b.pretty_string(),
                          "0 1 o   \n" + 
                          "1 2 oo  \n" + 

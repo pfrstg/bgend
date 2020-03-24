@@ -86,7 +86,7 @@ class DistributionStore(object):
 
     Attributes:
       config: board.GameConfiguration
-      distribution_map: map from board index to MoveCountDistribution
+      distribution_map: map from board id to MoveCountDistribution
     """
 
     def __init__(self, config):
@@ -112,15 +112,15 @@ class DistributionStore(object):
           list of board.Move
 
         """
-        # dict from board index to tuple of (expected_value, moves)
+        # dict from board id to tuple of (expected_value, moves)
         possible_next_boards = {}
         for moves in this_board.generate_moves(roll):
             next_board = this_board.apply_moves(moves)
-            next_board_idx = next_board.get_index()
-            if next_board_idx in possible_next_boards:
+            next_board_id = next_board.get_id()
+            if next_board_id in possible_next_boards:
                 continue
-            possible_next_boards[next_board_idx] = (
-                self.distribution_map[next_board_idx].expected_value(),
+            possible_next_boards[next_board_id] = (
+                self.distribution_map[next_board_id].expected_value(),
                 moves)
 
         best_next_board = min(possible_next_boards.keys(),
@@ -144,7 +144,7 @@ class DistributionStore(object):
         for roll in board.ROLLS:
             moves = self.compute_best_moves_for_roll(this_board, roll)
             next_board = this_board.apply_moves(moves)
-            out += (self.distribution_map[next_board.get_index()]
+            out += (self.distribution_map[next_board.get_id()]
                     .increase_counts(1) * roll.prob)
 
         assert out.is_normalized()
@@ -167,14 +167,14 @@ class DistributionStore(object):
                   flush=True)
 
         start_time = time.time()
-        # The minimum board index is the game ended state.
+        # The minimum board id is the game ended state.
         boards_processed = 1
-        self.distribution_map[self.config.min_board_index] = MoveCountDistribution([1])
-        index_generator = self.config.generate_valid_indices()
-        next(index_generator)  # skip the solved state
+        self.distribution_map[self.config.min_board_id] = MoveCountDistribution([1])
+        id_generator = self.config.generate_valid_ids()
+        next(id_generator)  # skip the solved state
         
-        for board_idx in index_generator:
-            if not self.config.is_valid_index(board_idx):
+        for board_id in id_generator:
+            if not self.config.is_valid_id(board_id):
                 continue
 
             boards_processed += 1
@@ -189,36 +189,36 @@ class DistributionStore(object):
                       (this_time - start_time) / frac_complete), 
                       flush=True)
 
-            this_board = board.Board.from_index(self.config, board_idx)
+            this_board = board.Board.from_id(self.config, board_id)
             dist = self.compute_move_distribution_for_board(this_board)
-            self.distribution_map[board_idx] = dist
+            self.distribution_map[board_id] = dist
 
             if limit > 0 and boards_processed >= limit:
-                print("Stopping at %d boards, index %d"
-                      % (boards_processed, board_idx))
+                print("Stopping at %d boards, id %d"
+                      % (boards_processed, board_id))
                 break
 
     def pretty_string(self, limit=-1):
         num_printed = 0
-        for board_idx, dist in self.distribution_map.items():
-            this_board = board.Board.from_index(self.config, board_idx)
-            print("Board %d" % board_idx)
+        for board_id, dist in self.distribution_map.items():
+            this_board = board.Board.from_id(self.config, board_id)
+            print("Board %d" % board_id)
             print(dist)
             print(this_board.pretty_string())
 
     def save_hdf5(self, fileobj):
         with h5py.File(fileobj, "w") as f:
             dist_map_grp = f.create_group("distribution_map")
-            for board_idx, mcd in self.distribution_map.items():
+            for board_id, mcd in self.distribution_map.items():
                 #print(mcd)
-                dist_map_grp.create_dataset(str(board_idx), data=mcd.dist)
+                dist_map_grp.create_dataset(str(board_id), data=mcd.dist)
             self.config.save_into_hdf5(f.create_group("config"))
 
     def load_hdf5(fileobj):
         with h5py.File(fileobj, "w") as f:
             store = DistributionStore(
                 board.GameConfiguration.load_from_hdf5(f["config"]))
-            for board_idx, arr in f["distribution_map"].items():
-                store.distribution_map[int(board_idx)] = (
+            for board_id, arr in f["distribution_map"].items():
+                store.distribution_map[int(board_id)] = (
                     MoveCountDistribution(arr))
         return store
