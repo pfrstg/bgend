@@ -27,7 +27,7 @@ import strategy
 
 
 def gnubg_id_str_to_board_id(config, pos_id_str):
-    """Convert a Base64 endcoded position ID from gnubg to a Board.
+    """Convert a Base64 endcoded position ID from gnubg to a board ID.
 
     See 
     https://www.gnu.org/software/gnubg/manual/html_node/A-technical-description-of-the-Position-ID.html
@@ -38,7 +38,7 @@ def gnubg_id_str_to_board_id(config, pos_id_str):
       pos_id_str: Base64 encoded position ID from gnubg
 
     Returns:
-      board.Board
+      int
     """
     pos_id = int.from_bytes(base64.b64decode(pos_id_str + '=='),
                             byteorder='little')
@@ -51,6 +51,29 @@ def gnubg_id_str_to_board_id(config, pos_id_str):
                         ~(~0 << missing_markers) )
 
     return modified_pos_id
+
+
+def board_id_to_gnubg_id_str(config, board_id):
+    """Convert a board ID to a Base64 endcoded position ID from gnubg.
+
+    See 
+    https://www.gnu.org/software/gnubg/manual/html_node/A-technical-description-of-the-Position-ID.html
+    for a description of their position id encoding.
+
+    Args:
+      config: board.GameConfiguration
+      board_id: valid Board ID for config
+
+    Returns:
+      string
+    """
+    b = board.Board.from_id(config, board_id)
+    modified_board_id = board_id >> (b.spot_counts[0] + 1)
+    # -2 because we trim off the two ==
+    bytes_val = base64.b64encode(
+        modified_board_id.to_bytes(10, byteorder='little'))[0:-2]
+    
+    return bytes_val.decode()
 
 
 def parse_gnubg_dump(config, gnubg_str):

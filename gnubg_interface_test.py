@@ -45,6 +45,21 @@ class PositionIDTest(unittest.TestCase):
                          gnubg_interface.gnubg_id_str_to_board_id(
                              config, 'uX8HAAAAAAAAAA'))
 
+    def test_to_string(self):
+        config = board.GameConfiguration(15, 6)
+        self.assertEqual(
+            'AQAAAAAAAAAAAA',
+            gnubg_interface.board_id_to_gnubg_id_str(config, 
+                board.Board(config, [14, 1, 0, 0, 0, 0, 0]).get_id()))
+
+    def test_round_trip(self):
+        config = board.GameConfiguration(15, 6)
+        for board_id in config.generate_valid_ids():
+            gnubg_str = gnubg_interface.board_id_to_gnubg_id_str(config, board_id)
+            new_board_id = gnubg_interface.gnubg_id_str_to_board_id(config, gnubg_str)
+            self.assertEqual(board_id, new_board_id,                             
+                             msg='gnbg_str={}'.format(gnubg_str))
+        
 
 class ParseTest(unittest.TestCase):
     def testParse(self):
