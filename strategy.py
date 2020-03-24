@@ -67,6 +67,9 @@ class MoveCountDistribution(object):
 
     def __iter__(self):
         return self.dist.__iter__()
+
+    def __len__(self):
+        return self.dist.__len__()
     
     def increase_counts(self, amount):
         return MoveCountDistribution(np.insert(self.dist, 0, [0] * amount))
