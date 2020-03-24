@@ -215,7 +215,7 @@ class DistributionStore(object):
             self.config.save_into_hdf5(f.create_group("config"))
 
     def load_hdf5(fileobj):
-        with h5py.File(fileobj, "w") as f:
+        with h5py.File(fileobj, "r") as f:
             store = DistributionStore(
                 board.GameConfiguration.load_from_hdf5(f["config"]))
             for board_id, arr in f["distribution_map"].items():
