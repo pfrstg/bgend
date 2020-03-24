@@ -26,7 +26,7 @@ import board
 import strategy
 
 
-def position_id_string_to_board(config, pos_id_str):
+def gnubg_id_str_to_board_id(config, pos_id_str):
     """Convert a Base64 endcoded position ID from gnubg to a Board.
 
     See 
@@ -50,7 +50,7 @@ def position_id_string_to_board(config, pos_id_str):
     modified_pos_id = ( (pos_id << (missing_markers + 1)) |
                         ~(~0 << missing_markers) )
 
-    return board.Board.from_id(config, modified_pos_id)
+    return modified_pos_id
 
 
 def parse_gnubg_dump(config, gnubg_str):
@@ -99,7 +99,9 @@ def parse_gnubg_dump(config, gnubg_str):
     if not mcd:
         raise ValueError('Never found move distribution')
     
-    return position_id_string_to_board(config, pos_id_str), mcd
+    return (board.Board.from_id(config,
+                                gnubg_id_str_to_board_id(config, pos_id_str)),
+            mcd)
 
 
 def create_distribution_store_from_gnubg(gnubg_dir):

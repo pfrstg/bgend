@@ -25,24 +25,24 @@ class PositionIDTest(unittest.TestCase):
     def test_from_string(self):
         config = board.GameConfiguration(15, 6)
         # index 1
-        self.assertEqual(board.Board(config, [14, 1, 0, 0, 0, 0, 0]),
-                         gnubg_interface.position_id_string_to_board(
+        self.assertEqual(board.Board(config, [14, 1, 0, 0, 0, 0, 0]).get_id(),
+                         gnubg_interface.gnubg_id_str_to_board_id(
                              config, 'AQAAAAAAAAAAAA'))
         # index 2
-        self.assertEqual(board.Board(config, [14, 0, 1, 0, 0, 0, 0]),
-                         gnubg_interface.position_id_string_to_board(
+        self.assertEqual(board.Board(config, [14, 0, 1, 0, 0, 0, 0]).get_id(),
+                         gnubg_interface.gnubg_id_str_to_board_id(
                              config, 'AgAAAAAAAAAAAA'))
         # index 99
-        self.assertEqual(board.Board(config, [11, 2, 0, 0, 2, 0, 0]),
-                         gnubg_interface.position_id_string_to_board(
+        self.assertEqual(board.Board(config, [11, 2, 0, 0, 2, 0, 0]).get_id(),
+                         gnubg_interface.gnubg_id_str_to_board_id(
                              config, 'YwAAAAAAAAAAAA'))
         # index 33333
-        self.assertEqual(board.Board(config, [1, 1, 11, 0, 0, 1, 1]),
-                         gnubg_interface.position_id_string_to_board(
+        self.assertEqual(board.Board(config, [1, 1, 11, 0, 0, 1, 1]).get_id(),
+                         gnubg_interface.gnubg_id_str_to_board_id(
                              config, '/R8FAAAAAAAAAA'))
         # index 50000 (everything is on the board)
-        self.assertEqual(board.Board(config, [0, 1, 0, 3, 8, 3, 0]),
-                         gnubg_interface.position_id_string_to_board(
+        self.assertEqual(board.Board(config, [0, 1, 0, 3, 8, 3, 0]).get_id(),
+                         gnubg_interface.gnubg_id_str_to_board_id(
                              config, 'uX8HAAAAAAAAAA'))
 
 
