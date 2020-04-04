@@ -18,7 +18,7 @@ import copy
 import itertools
 import gmpy2
 import numpy as np
-import scipy.misc
+import scipy.special
 
 
 class GameConfiguration(object):
@@ -37,7 +37,7 @@ class GameConfiguration(object):
         self.num_spots = num_spots
         # see Board for a discussion of number of boards and how the board
         # indexing works
-        self.num_valid_boards = scipy.misc.comb(
+        self.num_valid_boards = scipy.special.comb(
             self.num_markers + self.num_spots, self.num_spots, exact=True)
         self.min_board_id = 0
         self.max_board_id = 1  # because max is exclusive
