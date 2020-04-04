@@ -69,6 +69,21 @@ class MoveCountDistributionTestCase(unittest.TestCase):
                                    [0.1, 0.2, 0.3, 0.4])
         
 
+    def test_trim_low_prob(self):
+        np.testing.assert_allclose(
+            strategy.MoveCountDistribution([0.1, 0.2, 0.3])
+            .trim_low_prob(0.01).dist,
+            [0.1, 0.2, 0.3])
+        np.testing.assert_allclose(
+            strategy.MoveCountDistribution([0.1, 0.2, 0.3])
+            .trim_low_prob(0.15).dist,
+            [0.0, 0.2, 0.3])
+        np.testing.assert_allclose(
+            strategy.MoveCountDistribution([0.3, 0.2, 0.1, 0.01])
+            .trim_low_prob(0.15).dist,
+            [0.3, 0.2])
+            
+        
 class DistributionStoreTestCase(unittest.TestCase):
 
     def test_e2e_6_3(self):

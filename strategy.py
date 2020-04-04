@@ -82,6 +82,11 @@ class MoveCountDistribution(object):
 
     def append(self, values):
         return MoveCountDistribution(np.append(self.dist, values))
+
+    def trim_low_prob(self, threshold):
+        modified_dist = self.dist
+        modified_dist[modified_dist < threshold] = 0
+        return MoveCountDistribution(np.trim_zeros(modified_dist, 'b'))
     
 
 class DistributionStore(object):
