@@ -19,14 +19,42 @@ import time
 import board
 
 
+class ProgressIndicator(object):
+    """Simple print based progress indicator."""
+    def __init__(self, total_objects, progress_interval):
+        self.total_objects = total_objects
+        self.completed_objects = 0
+        self.progress_interval = progress_interval
+        self.start_time = time.time()
+
+    def complete_one(self):
+        """Mark completion of one obhect."""
+        self.completed_objects += 1
+        if self.progress_interval == 0:
+            return
+        if (self.completed_objects != self.total_objects and
+            self.completed_objects % self.progress_interval != 0):
+            return
+
+        frac_complete = self.completed_objects / self.total_objects
+        this_time = time.time()
+        print("%d/%d %.1f%%, %fs elapsed, %fs estimated total" % (
+            self.completed_objects,
+            self.total_objects,
+            frac_complete * 100,
+            this_time - self.start_time,
+            (this_time - self.start_time) / frac_complete),
+            flush=True)
+
+
 class MoveCountDistribution(object):
     """Stores a distribution over number of moves till end of game.
 
-    Attribute dist is an np array of float containing the probabilities of 
+    Attribute dist is an np array of float containing the probabilities of
     each number of moves to finish."""
 
     __slots__ = ["dist"]
-    
+
     def __init__(self, dist=np.zeros([1])):
         self.dist = np.asarray(dist)
         if len(self.dist.shape) != 1:
@@ -41,8 +69,8 @@ class MoveCountDistribution(object):
                    constant_values=0) +
             np.pad(other.dist, (0, max_len - other.dist.shape[0]),
                    mode="constant",
-                   constant_values=0))                   
-    
+                   constant_values=0))
+
     def __sub__(self, other):
         """Only support subtracting to another MoveCountDistribution."""
         max_len = max(self.dist.shape[0], other.dist.shape[0])
@@ -53,11 +81,11 @@ class MoveCountDistribution(object):
             np.pad(other.dist, (0, max_len - other.dist.shape[0]),
                    mode="constant",
                    constant_values=0))
-    
+
     def __mul__(self, other):
         """Only support multiplying with a scalar."""
         return MoveCountDistribution(self.dist * other)
-    
+
     def __truediv__(self, other):
         """Only support multiplying with a scalar."""
         return MoveCountDistribution(self.dist / other)
@@ -70,7 +98,7 @@ class MoveCountDistribution(object):
 
     def __len__(self):
         return self.dist.__len__()
-    
+
     def increase_counts(self, amount):
         return MoveCountDistribution(np.insert(self.dist, 0, [0] * amount))
 
@@ -87,7 +115,7 @@ class MoveCountDistribution(object):
         modified_dist = self.dist
         modified_dist[modified_dist < threshold] = 0
         return MoveCountDistribution(np.trim_zeros(modified_dist, 'b'))
-    
+
 
 class DistributionStore(object):
     """Stores MoveCountDistributions for board states.
@@ -100,7 +128,7 @@ class DistributionStore(object):
     def __init__(self, config):
         self.config = config
         self.distribution_map = {}
-        
+
     def compute_best_moves_for_roll(self, this_board, roll):
         """Computes the best moves for the roll.
 
@@ -133,7 +161,7 @@ class DistributionStore(object):
 
         best_next_board = min(possible_next_boards.keys(),
                               key=(lambda k: possible_next_boards[k][0]))
-        
+
         return possible_next_boards[best_next_board][1]
 
     def compute_move_distribution_for_board(self, this_board):
@@ -156,7 +184,7 @@ class DistributionStore(object):
                     .increase_counts(1) * roll.prob)
 
         assert out.is_normalized()
-            
+
         return out
 
     def compute(self, progress_interval=500, limit=-1):
@@ -169,41 +197,32 @@ class DistributionStore(object):
         """
         self.distribution_map.clear()
 
+        progress_indicator = ProgressIndicator(self.config.num_valid_boards,
+                                               progress_interval)
         if progress_interval:
             print("Starting compute on %d boards" %
                   self.config.num_valid_boards,
                   flush=True)
 
-        start_time = time.time()
         # The minimum board id is the game ended state.
-        boards_processed = 1
+        progress_indicator.complete_one()
         self.distribution_map[self.config.min_board_id] = MoveCountDistribution([1])
         id_generator = self.config.generate_valid_ids()
         next(id_generator)  # skip the solved state
-        
+
         for board_id in id_generator:
             if not self.config.is_valid_id(board_id):
                 continue
 
-            boards_processed += 1
-            if progress_interval and boards_processed % progress_interval == 0:
-                frac_complete = boards_processed / self.config.num_valid_boards
-                this_time = time.time()
-                print("%d/%d %.1f%%, %fs elapsed, %fs estimated total" % (
-                      boards_processed,
-                      self.config.num_valid_boards,
-                      frac_complete * 100,
-                      this_time - start_time,
-                      (this_time - start_time) / frac_complete), 
-                      flush=True)
+            progress_indicator.complete_one()
 
             this_board = board.Board.from_id(self.config, board_id)
             dist = self.compute_move_distribution_for_board(this_board)
             self.distribution_map[board_id] = dist
 
-            if limit > 0 and boards_processed >= limit:
+            if limit > 0 and progress_indicator.completed_objects >= limit:
                 print("Stopping at %d boards, id %d"
-                      % (boards_processed, board_id))
+                      % (progress_indicator.completed_objects, board_id))
                 break
 
     def pretty_string(self, limit=-1):
