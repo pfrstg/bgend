@@ -172,10 +172,13 @@ class Board(object):
                 current_spot_count = 0
         spot_counts[current_spot] = current_spot_count
 
-        return Board(config, spot_counts)
+        return Board(config, spot_counts, sanity_check=False)
 
-    def __init__(self, config, spot_counts):
+    def __init__(self, config, spot_counts, sanity_check=True):
         self.config = config
+        if not sanity_check:
+            self.spot_counts = spot_counts
+            return
         if len(spot_counts) != (self.config.num_spots + 1):
             raise ValueError("Bad size for %s, expected %d" %
                              (spot_counts, self.config.num_spots + 1))
@@ -240,7 +243,7 @@ class Board(object):
         if move.spot < 1 or move.spot > self.config.num_spots:
             raise ValueError("Invalid spot on %s on %s" % (
                 move, self))
-        new_board = copy.deepcopy(self)
+        new_board = Board(self.config, copy.copy(self.spot_counts), sanity_check=False)
         new_board.spot_counts[move.spot] -= 1
         if move.count > move.spot:
             for i in range(move.spot + 1, self.config.num_spots + 1):
