@@ -34,7 +34,7 @@ for board_id in store.distribution_map.keys():
     dist = store.compute_move_distribution_for_board(this_board)
 
     count += 1
-    if count % 100 == 0:
+    if count % 25  == 0:
         print("Boards processed: {} at id {}".format(count, board_id))
 
 
