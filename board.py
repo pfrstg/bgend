@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import array
+import ast
 import collections
 import copy
 import itertools
@@ -334,3 +335,20 @@ class Board(object):
                     out[spot_idx] += this_move_str
 
         return '\n'.join(out) + '\n'
+
+
+def encode_moves_string(moves):
+    out = []
+    for m in moves:
+        out.append([m.spot, m.count])
+    return str(out)
+
+
+def decode_moves_string(s):
+    out = []
+    parsed = ast.literal_eval(s)
+    for m_arr in parsed:
+        if len(m_arr) != 2:
+            raise ValueError("Bad element {} in '{}'".format(m_arr, s))
+        out.append(Move(m_arr[0], m_arr[1]))
+    return out

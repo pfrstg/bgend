@@ -49,7 +49,7 @@ class GameConfigurationTestCase(unittest.TestCase):
         config = board.GameConfiguration(num_markers, num_spots)
         self.assertEqual(config.num_valid_boards,
                          sum(1 for _ in config.generate_valid_ids()))
-        
+
 
     @parameterized.expand([
         (5, 3),
@@ -76,14 +76,14 @@ class GameConfigurationTestCase(unittest.TestCase):
                 break
 
             board_id = next_board_id
-        
+
     def rolls_sum_to_one(self):
         sum = 0
         for _, prob in board.ROLLS:
             sum += prob
         self.assertEqual(sum, 1.0)
 
-        
+
 class BoardTestCase(unittest.TestCase):
 
     def test_id_init(self):
@@ -112,7 +112,7 @@ class BoardTestCase(unittest.TestCase):
         self.assertEqual(0, board.Board(config, [6, 0, 0, 0]).total_pips())
         self.assertEqual(5, board.Board(config, [1, 5, 0, 0]).total_pips())
         self.assertEqual(14, board.Board(config, [0, 1, 2, 3]).total_pips())
-        
+
     @parameterized.expand([
         (5, 3),
         (10, 5),
@@ -140,7 +140,7 @@ class BoardTestCase(unittest.TestCase):
                 next_b = b.next_valid_board()
                 msg += "next b: %s; " % str(next_b)
             except StopIteration:
-                try: 
+                try:
                     next_idx = next(id_gen)
                     self.fail(
                         "Generator not finished with next_valid_board was %s" % msg)
@@ -153,15 +153,15 @@ class BoardTestCase(unittest.TestCase):
                 self.fail("Generator ran out before board; %s" % msg)
             self.assertEqual(next_b.get_id(), next_idx, msg)
             b = next_b
-        
+
     def test_pretty_print(self):
         config = board.GameConfiguration(6, 2)
         # Board state is 1 off, 2 on 1 spot, 3 on 2 spot
         # 11101101
         b = board.Board.from_id(config, 0xED)
         self.assertEqual(b.pretty_string(),
-                         "0 1 o   \n" + 
-                         "1 2 oo  \n" + 
+                         "0 1 o   \n" +
+                         "1 2 oo  \n" +
                          "2 3 ooo \n")
 
     def test_pretty_print_with_moves(self):
@@ -192,7 +192,7 @@ class BoardTestCase(unittest.TestCase):
 
     def test_apply_move_errors(self):
         config = board.GameConfiguration(6, 2)
-        
+
         b = board.Board(config, [1, 2, 3])
         with self.assertRaisesRegex(ValueError, "Invalid spot"):
             b.apply_move(board.Move(0, 6))
@@ -205,15 +205,15 @@ class BoardTestCase(unittest.TestCase):
 
     def test_generate_moves_one_valid(self):
         config = board.GameConfiguration(6, 2)
-        b = board.Board(config, [1, 2, 3]) 
+        b = board.Board(config, [1, 2, 3])
         got = list(b.generate_moves(board.Roll(dice=[5, 4], prob=0)))
         self.assertEqual(2, len(got))
         self.assertIn([board.Move(2, 5), board.Move(2, 4)], got)
         self.assertIn([board.Move(2, 4), board.Move(2, 5)], got)
-            
+
     def test_generate_moves_second_dependent(self):
         config = board.GameConfiguration(2, 4)
-        b = board.Board(config, [0, 0, 1, 0, 1]) 
+        b = board.Board(config, [0, 0, 1, 0, 1])
         got = list(b.generate_moves(board.Roll(dice=[4, 4], prob=0)))
         self.assertEqual(1, len(got))
         self.assertIn([board.Move(4, 4), board.Move(2, 4)], got)
@@ -222,7 +222,7 @@ class BoardTestCase(unittest.TestCase):
         config = board.GameConfiguration(3, 4)
         # Making sure we don't generate the move that is the 1 spot
         # going 4 spaces.`
-        b = board.Board(config, [0, 1, 0, 2, 0]) 
+        b = board.Board(config, [0, 1, 0, 2, 0])
         got = list(b.generate_moves(board.Roll(dice=[4, 4], prob=0)))
         self.assertEqual(1, len(got))
         self.assertIn([board.Move(3, 4), board.Move(3, 4)], got)
@@ -231,7 +231,7 @@ class BoardTestCase(unittest.TestCase):
         # This is the case where you have to try applying the dice in the
         # opposite order in order to get a different board as outcome.
         config = board.GameConfiguration(2, 4)
-        b = board.Board(config, [0, 0, 1, 0, 1]) 
+        b = board.Board(config, [0, 0, 1, 0, 1])
         got = list(b.generate_moves(board.Roll(dice=[4, 3], prob=0)))
         self.assertEqual(2, len(got))
         self.assertIn([board.Move(4, 3), board.Move(2, 4)], got)
@@ -240,7 +240,7 @@ class BoardTestCase(unittest.TestCase):
     def test_generate_moves_unfinished(self):
         # This is where you don't have to use all the moves to finish
         config = board.GameConfiguration(2, 2)
-        b = board.Board(config, [1, 0, 1]) 
+        b = board.Board(config, [1, 0, 1])
         got = list(b.generate_moves(board.Roll(dice=[5, 4], prob=0)))
         self.assertEqual(2, len(got))
         self.assertIn([board.Move(2, 4)], got)
@@ -274,7 +274,24 @@ class BoardTestCase(unittest.TestCase):
             except Exception as e:
                 print("%s with moves %s" % (roll, moves))
                 raise e
-        
-        
+
+
+
+class EncodedMovesTestCase(unittest.TestCase):
+    def test_two_moves(self):
+        moves = [board.Move(6, 2), board.Move(5, 3)]
+        encoded_str = board.encode_moves_string(moves)
+        self.assertEqual("[[6, 2], [5, 3]]", encoded_str)
+        decoded_moves = board.decode_moves_string(encoded_str)
+        self.assertEqual(moves, decoded_moves)
+
+    def test_four_moves(self):
+        moves = [board.Move(6, 1), board.Move(5, 1), board.Move(4, 1), board.Move(3, 1)]
+        encoded_str = board.encode_moves_string(moves)
+        self.assertEqual("[[6, 1], [5, 1], [4, 1], [3, 1]]", encoded_str)
+        decoded_moves = board.decode_moves_string(encoded_str)
+        self.assertEqual(moves, decoded_moves)
+
+
 if __name__ == '__main__':
     unittest.main()
