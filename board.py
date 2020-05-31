@@ -153,6 +153,7 @@ class Board(object):
     every achievable next board position by the time you get to a
     state, just iterate from min to max.
     """
+    __slots__=["config", "spot_counts"]
 
     def from_id(config, idx):
         if not config.is_valid_id(idx):
