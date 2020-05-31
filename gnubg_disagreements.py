@@ -38,7 +38,7 @@ def find_disagreement():
 
     for board_id in our_store.distribution_map:
         progress_indicator.complete_one()
-        if np.random.randint(0, SAMPLE_EVERY) > 0:
+        if SAMPLE_EVERY and np.random.randint(0, SAMPLE_EVERY) > 0:
             continue
 
         boards_examined += 1
